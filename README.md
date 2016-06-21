@@ -29,7 +29,7 @@ I would advise against it&hellip;
 ## Todo
 - [ ] Macros(?), make FOR and INC macros
 - [ ] Garbage collection(?)
-- [-] ~~Global variables~~ (ADDED)
+- [x] ~~Global variables~~ (ADDED)
 - [ ] Linking multiple files
 
 ## Usage
