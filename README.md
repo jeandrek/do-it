@@ -82,7 +82,7 @@ The while special form repeatedly evaluates \<body ...\> (as by begin, in fact t
 The return special form immediately exits from the procedure or program, returning the result of \<expr\> if it is present.
 
 #### `(proc <name> (<parameters ...>) <body ...>)`
-The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body\> is executed.
+The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body\> is executed as by begin.
 
 #### `(var <name> <init ?>)`
 The var special form defines the variable \<name\>, and sets it to \<init\> if it is present.
