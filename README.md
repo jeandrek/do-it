@@ -30,6 +30,7 @@ I would advise against it&hellip;
 - [ ] Macros(?), make FOR and INC macros
 - [ ] Garbage collection(?)
 - [ ] Global variables
+- [ ] Linking multiple files
 
 ## Usage
 Something like
