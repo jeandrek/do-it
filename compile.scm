@@ -299,10 +299,13 @@
 
 ;;; Compile a program.
 (define (compile-program expr port)
+  ;; Intialize global variables.
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
   (set! *stack* '(0))
+
   (emit port "\t.text")
+
   (emit port "\t.globl entry")
   (emit port "entry:")
   (emit port "\tpushl %ebp")
@@ -311,10 +314,16 @@
   (cleanup port)
   (emit port "\tpopl %ebp")
   (emit port "\tret")
+
+  ;; Emit procedures.
   (display (get-output-string *procedures*) port)
+
+  ;; Emit data.
   (emit port "\t.data")
   (display (get-output-string *data*) port))
 
+;;; Read a program from the port input and
+;;; compile it to the port output.
 (define (compile-file input output)
   (let loop ((accum '(begin)))
     (let ((expr (read input)))
