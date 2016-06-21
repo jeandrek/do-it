@@ -235,12 +235,14 @@
   (let ((name (mangle (cadr expr)))
         (params (caddr expr))
         (body (cdddr expr))
-        (new-env (empty-environment)))
+        (new-env (empty-environment))
+        (old-toplevel *toplevel*))
     (emit *procedures* "\t.globl ~s" name)
     (emit *procedures* "~s:" name)
     (emit *procedures* "\tpushl %ebp")
     (emit *procedures* "\tmovl %esp, %ebp")
     (set! *stack* (cons 0 *stack*))
+    (set! *toplevel* #f)
 
     ;; Bind parameters to arguments.
     (let loop ((i (* wordsize 2))
@@ -257,7 +259,9 @@
     ;; Emit cleanup code.
     (cleanup *procedures*)
     (emit *procedures* "\tpopl %ebp")
-    (emit *procedures* "\tret")))
+    (emit *procedures* "\tret")
+
+    (set! *toplevel* old-toplevel)))
 
 (define (compile-var expr port env)
   (if *toplevel*
@@ -267,8 +271,8 @@
         (if (pair? (cddr expr))
             (begin
               (compile (caddr expr) port env)
-              (emit port "\tmovl %eax, $~s" label)))
-        (environment-define! env (cadr expr) (string-append "$" label)))
+              (emit port "\tmovl %eax, ~s" label)))
+        (environment-define! env (cadr expr) label))
       (begin
         (if (pair? (cddr expr))
             (compile (caddr expr) port env))
