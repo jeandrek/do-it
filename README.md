@@ -142,5 +142,5 @@ This is the same as `(set <name> (+ <name> 1))`
   (not (> x y)))
 
 (for (var i 0) (<= i 20) (inc i)
-  (printf "The %dnth Fibonacci number is %d\n" i (fib i)))
+  (printf "The %dth Fibonacci number is %d\n" i (fib i)))
 ```
