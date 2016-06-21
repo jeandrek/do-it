@@ -104,7 +104,7 @@ This is the same as
 e.g.
 
 ```scheme
-(for (var i 0) (< var 21) (inc var)
+(for (var i 0) (< i 21) (inc i)
   (printf "%d" i)
   (newline))
 ```
