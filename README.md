@@ -115,6 +115,10 @@ This is the same as `(set <name> (+ <name> 1))`
 
 ## Examples
 ```scheme
+(printf "Hello, world!\n")
+```
+
+```scheme
 (proc greet (name)
   (printf "Hello, %s!\n" name))
 
@@ -123,5 +127,20 @@ This is the same as `(set <name> (+ <name> 1))`
 (greet "Thomas")
 (greet "James")
 (greet "David")
-(greet "Whoever")
+(greet "Tony")
+```
+
+```scheme
+;;; Get the nth Fibonacci number
+(proc fib (n)
+  (if (< n 2)
+      n
+      (+ (fib (- n 1))
+         (fib (- n 2)))))
+
+(proc <= (x y)
+  (not (> x y)))
+
+(for (var i 0) (<= i 20) (inc i)
+  (printf "The %dnth Fibonacci number is %d\n" i (fib i)))
 ```
