@@ -86,6 +86,10 @@
 ;;; Stack of the stack index
 (define *stack* '())
 
+;;; #t if compiling in the global environment,
+;;; #f otherwise.
+(define *toplevel* #f)
+
 ;;; Return a unique label.
 (define unique-label
   (let ((count 0))
@@ -209,8 +213,8 @@
 (define (empty-environment)
   (cons '() '()))
 
-;;; Get the stack index of the variable var from
-;;; the environment env.
+;;; Get the assembly expression pointing to the value
+;;; of the variable var from the environment env.
 (define (environment-lookup env var)
   (let loop ((vars (car env))
              (vals (cdr env)))
@@ -221,8 +225,8 @@
            (loop (cdr vars)
                  (cdr vals))))))
 
-;;; Define the variable var to be at the stack
-;;; index val in the environment env.
+;;; Define the variable var to be the assembly
+;;; expression val in the environment env.
 (define (environment-define! env var val)
   (set-car! env (cons var (car env)))
   (set-cdr! env (cons val (cdr env))))
@@ -231,19 +235,22 @@
   (let ((name (mangle (cadr expr)))
         (params (caddr expr))
         (body (cdddr expr))
-        (new-env (empty-environment)))
+        (new-env (empty-environment))
+        (old-toplevel *toplevel*))
     (emit *procedures* "\t.globl ~s" name)
     (emit *procedures* "~s:" name)
     (emit *procedures* "\tpushl %ebp")
     (emit *procedures* "\tmovl %esp, %ebp")
     (set! *stack* (cons 0 *stack*))
+    (set! *toplevel* #f)
 
     ;; Bind parameters to arguments.
     (let loop ((i (* wordsize 2))
                (params params))
       (if (not (null? params))
           (begin
-            (environment-define! new-env (car params) i)
+            (environment-define! new-env (car params)
+             (string-append (number->string i) "(%ebp)"))
             (loop (+ i wordsize) (cdr params)))))
 
     ;; Compile the procedure body.
@@ -252,22 +259,37 @@
     ;; Emit cleanup code.
     (cleanup *procedures*)
     (emit *procedures* "\tpopl %ebp")
-    (emit *procedures* "\tret")))
+    (emit *procedures* "\tret")
+
+    (set! *toplevel* old-toplevel)))
 
 (define (compile-var expr port env)
-  (if (pair? (cddr expr))
-      (compile (caddr expr) port env))
-  (emit port "\tpushl %eax")
-  (set-car! *stack* (- (car *stack*) wordsize))
-  (environment-define! env (cadr expr) (car *stack*)))
+  (if *toplevel*
+      (let ((label (unique-label)))
+        (emit *data* "~s:" label)
+        (emit *data* "\t.fill 1, ~n, 0" wordsize)
+        (if (pair? (cddr expr))
+            (begin
+              (compile (caddr expr) port env)
+              (emit port "\tmovl %eax, ~s" label)))
+        (environment-define! env (cadr expr) label))
+      (begin
+        (if (pair? (cddr expr))
+            (compile (caddr expr) port env))
+        (emit port "\tpushl %eax")
+        (set-car! *stack* (- (car *stack*) wordsize))
+        (environment-define! env (cadr expr)
+         (string-append
+          (number->string (car *stack*))
+          "(%ebp)")))))
 
 (define (compile-set expr port env)
   (compile (caddr expr) port env)
-  (emit port "\tmovl %eax, ~n(%ebp)" (environment-lookup env (cadr expr))))
+  (emit port "\tmovl %eax, ~s" (environment-lookup env (cadr expr))))
 
 ;;; Compile a variable reference.
 (define (compile-variable expr port env)
-  (emit port "\tmovl ~n(%ebp), %eax" (environment-lookup env expr)))
+  (emit port "\tmovl ~s, %eax" (environment-lookup env expr)))
 
 (define (cddddr pair) (cdr (cdddr pair)))
 
@@ -307,6 +329,7 @@
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
   (set! *stack* '(0))
+  (set! *toplevel* #t)
 
   (emit port "\t.text")
 
