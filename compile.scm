@@ -38,6 +38,8 @@
                 (loop (cdr lst) args))))))
   (newline port))
 
+;;; Return #t if obj is a pair and the
+;;; car of obj is tag and #f otherwise.
 (define (tagged-list? obj tag)
   (and (pair? obj)
        (eq? (car obj) tag)))
@@ -57,31 +59,41 @@
 
 (define variable? symbol?)
 
+;;; Return #t if obj is an immediate
+;;; object and #f otherwise.
 (define (immediate? obj)
   (or (integer? obj)
       (boolean? obj)
       (char? obj)))
 
+;;; Return #t if expr is a self-evaluating
+;;; expression and #f otherwise.
 (define (self-evaluating? expr)
   (or (immediate? expr)
       (string? expr)))
 
+;;; Return the immediate representation of obj.
 (define (immediate-rep obj)
   (cond ((number? obj) obj)
         ((boolean? obj) (if obj 1 0))
         ((char? obj) (char->integer obj))))
 
+;;; Port for constants
 (define *data* #f)
+;;; Port for procedures
 (define *procedures* #f)
 
-(define *stack* '())
+;;; Stack of the stack index
+(define *si* '())
 
+;;; Return a unique label.
 (define unique-label
   (let ((count 0))
     (lambda ()
       (set! count (+ count 1))
       (string-append "L_" (number->string count)))))
 
+;;; Turn a Scheme symbol into an x86 symbol.
 (define (mangle sym)
   (define (mangle-aux lst)
     (if (null? lst)
@@ -101,6 +113,7 @@
   (list->string
    (mangle-aux (string->list (symbol->string sym)))))
 
+;;; Compile a datum.
 (define (compile-datum obj port)
   (cond ((immediate? obj)
          (emit port "\tmovl $~n, %eax" (immediate-rep obj)))
@@ -172,6 +185,7 @@
    (lambda (x) (compile x port env))
    (cdr expr)))
 
+;;; Compile a procedure application.
 (define (compile-application expr port env)
   (for-each
    (lambda (x)
@@ -184,6 +198,8 @@
      (emit port "\taddl $~n, %esp" wordsize))
    (cdr expr)))
 
+;;; Emit code to clean up the stack at the end
+;;; of a procedure.
 (define (cleanup port)
   (let loop ((i (car *stack*)))
     (if (< i 0)
@@ -195,6 +211,8 @@
 (define (empty-environment)
   (cons '() '()))
 
+;;; Get the stack index of the variable var from
+;;; the environment env.
 (define (environment-lookup env var)
   (let loop ((vars (car env))
              (vals (cdr env)))
@@ -205,6 +223,8 @@
            (loop (cdr vars)
                  (cdr vals))))))
 
+;;; Define the variable var to be at the stack
+;;; index val in the environment env.
 (define (environment-define! env var val)
   (set-car! env (cons var (car env)))
   (set-cdr! env (cons val (cdr env))))
@@ -241,6 +261,7 @@
   (compile (caddr expr) port env)
   (emit port "\tmovl %eax, ~n(%ebp)" (environment-lookup env (cadr expr))))
 
+;;; Compile a variable reference.
 (define (compile-variable expr port env)
   (emit port "\tmovl ~n(%ebp), %eax" (environment-lookup env expr)))
 
@@ -258,6 +279,7 @@
 (define (compile-inc expr port env)
   (compile `(set ,(cadr expr) (+ ,(cadr expr) 1)) port env))
 
+;;; Compile an expression.
 (define (compile expr port env)
   (cond ((begin? expr) (compile-begin expr port env))
         ((while? expr) (compile-while expr port env))
@@ -275,6 +297,7 @@
         (else
          (error "Unknown expression type" expr))))
 
+;;; Compile a program.
 (define (compile-program expr port)
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
