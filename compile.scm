@@ -84,7 +84,7 @@
 (define *procedures* #f)
 
 ;;; Stack of the stack index
-(define *si* '())
+(define *stack* '())
 
 ;;; Return a unique label.
 (define unique-label
