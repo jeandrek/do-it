@@ -205,7 +205,7 @@
            (loop (cdr vars)
                  (cdr vals))))))
 
-(define (environment-define env var val)
+(define (environment-define! env var val)
   (set-car! env (cons var (car env)))
   (set-cdr! env (cons val (cdr env))))
 
@@ -223,7 +223,7 @@
                (params params))
       (if (not (null? params))
           (begin
-            (environment-define new-env (car params) i)
+            (environment-define! new-env (car params) i)
             (loop (+ i wordsize) (cdr params)))))
     (compile `(begin ,@body) *procedures* new-env)
     (cleanup *procedures*)
@@ -235,7 +235,7 @@
       (compile (caddr expr) port env))
   (emit port "\tpushl %eax")
   (set-car! *stack* (- (car *stack*) wordsize))
-  (environment-define env (cadr expr) (car *stack*)))
+  (environment-define! env (cadr expr) (car *stack*)))
 
 (define (compile-set expr port env)
   (compile (caddr expr) port env)
