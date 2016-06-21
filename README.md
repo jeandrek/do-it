@@ -41,7 +41,7 @@ A self-evaluating expression is a constant. Currently the only self-evaluating e
 A variable reference is simply a symbol (identifier) that is the name of the variable to be referenced.
 
 ### Procedure applications
-A procedure application takes the form `(<procedure name> <arguments> ...)`. \<procedure name\> is always symbol that is the name of a procedure. The \<arguments\> can be any type of expression, and they are passed as arguments to the procedure.
+A procedure application takes the form `(<procedure name> <arguments> ...)`. \<procedure name\> is always symbol that is the name of a procedure. (Like LISP, do-it has seperate namespaces for variables and procedures.) The \<arguments\> can be any type of expression, and they are passed as arguments to the procedure.
 
 do-it is call-by-value, so all the arguments are evaluated, then pushed onto the stack, and then the procedure is called.
 
@@ -61,7 +61,7 @@ The while special form repeatedly evaluates \<body ...\> (as by begin, in fact t
 The return special form immediately exits from the procedure or program, returning the result of \<expr\> if it is present.
 
 #### `(proc <name> (<parameters ...>) <body ...>)`
-The proc special form defines a procedure, like LISP's defun. It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body\> is executed.
+The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body\> is executed.
 
 #### `(var <name> <init ?>)`
 The var special form defines the variable \<name\>, and sets it to \<init\> if it is present.
