@@ -6,6 +6,9 @@ do-it is a toy procedural imperative programming language I wrote to gain experi
 ## Why?
 Because I want to learn about code generation.
 
+### Should I use do-it for my serious real-world program?
+I would advise against it&hellip;
+
 ## Limitations
 * No Garbage Collection
 * The compiler can only compile to 32-bit x86 AT&T Assembly
@@ -102,7 +105,6 @@ will print all the integers from 0 to 20 (inclusive).
 This is the same as `(set <name> (+ <name> 1))`
 
 ## Examples
-
 ```scheme
 (proc greet (name)
   (printf "Hello, %s!\n" name))
