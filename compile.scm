@@ -86,6 +86,10 @@
 ;;; Stack of the stack index
 (define *stack* '())
 
+;;; #t if compiling in the global environment,
+;;; #f otherwise.
+(define *toplevel* #f)
+
 ;;; Return a unique label.
 (define unique-label
   (let ((count 0))
@@ -321,6 +325,7 @@
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
   (set! *stack* '(0))
+  (set! *toplevel* #t)
 
   (emit port "\t.text")
 
