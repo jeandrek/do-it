@@ -1,5 +1,5 @@
 # do-it
-do-it is a toy procedural imperative programming language I wrote to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme. It is in very early stages.
+do-it is a toy procedural imperative (although everything is an expression for simplicity) programming language I wrote to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme. It is in very early stages.
 
 **Perhaps messy code warning and not very many comments!** Suggestions are very welcome.
 
