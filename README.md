@@ -6,7 +6,7 @@ do-it is a toy procedural imperative programming language I wrote to gain experi
 ## Why?
 Because I want to learn about code generation.
 
-### Should I use do-it for my serious real-world program?
+### Should I use do-it for my serious real-world program?/Should I learn do-it as my first programming language?
 I would advise against it&hellip;
 
 ## Limitations
