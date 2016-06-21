@@ -7,44 +7,44 @@ do-it is a toy procedural imperative programming language I wrote to gain experi
 Because I want to learn about code generation.
 
 ## Limitations
- * No Garbage Collection
- * The compiler can only compile to 32-bit x86 AT&T Assembly
-   (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
- * No type checking!! Bad programs will probably crash or produce nonsense results!
- * No global variables
- * Probably unstable and buggy, not a mature project
+* No Garbage Collection
+* The compiler can only compile to 32-bit x86 AT&T Assembly
+  (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
+* No type checking!! Bad programs will probably crash or produce nonsense results!
+* No global variables
+* Probably unstable and buggy, not a mature project
 
 ## Features
- * Local variables (allocated on the stack) and assignment
- * For and while loops
- * Procedures (not first class, can take arguments and return a value)
- * Conditionals (if is ternary)
- * Non-local exit (return)
- * Last expression in a procedure is automatically returned &ndash; it would take pointless effort to *not* do that!
- * Super easy to interface with C
+* Local variables (allocated on the stack) and assignment
+* For and while loops
+* Procedures (not first class, can take arguments and return a value)
+* Conditionals (if is ternary)
+* Non-local exit (return)
+* Last expression in a procedure is automatically returned &ndash; it would take pointless effort to *not* do that!
+* Super easy to interface with C
 
 ## Todo
- [ ] Macros(?), make FOR and INC macros
- [ ] Garbage collection(?)
- [ ] Global variables
+- [ ] Macros(?), make FOR and INC macros
+- [ ] Garbage collection(?)
+- [ ] Global variables
 
 ## Expressions
 A program in do-it is made of a sequence of expressions.
 
-do-it has three types of expressions:
+do-it has these three types of expressions:
 
- * Self-evaluating expressions
- * Variable references
- * Procedure applications
- * Special forms
+* Self-evaluating expressions
+* Variable references
+* Procedure applications
+* Special forms
 
 ### Self-evaluating expressions
 A self-evaluating expression is a constant. Currently the only self-evaluating expressions are:
 
- * Fixnums (do-it currently doesn't bother to check that an integer will fit in a fixnum&hellip;), e.g. `4`
- * Booleans, i.e. `#t` for true or `#f` for false
- * Characters, e.g. `#\a`
- * Strings, e.g. `"Hello, world!"`
+* Fixnums (do-it currently doesn't bother to check that an integer will fit in a fixnum&hellip;), e.g. `4`
+* Booleans, i.e. `#t` for true or `#f` for false
+* Characters, e.g. `#\a`
+* Strings, e.g. `"Hello, world!"`
 
 ### Variable references
 A variable reference is simply a symbol (identifier) that is the name of the variable to be referenced.
