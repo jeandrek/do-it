@@ -211,31 +211,39 @@
   (set! *stack* (cdr *stack*)))
 
 (define (empty-environment)
-  (cons '() '()))
+  (list (cons '() '())))
 
 ;;; Get the assembly expression pointing to the value
 ;;; of the variable var from the environment env.
 (define (environment-lookup env var)
-  (let loop ((vars (car env))
-             (vals (cdr env)))
-    (cond ((null? vars)
-           (error "Unbound variable" var))
-          ((eq? (car vars) var) (car vals))
-          (else
-           (loop (cdr vars)
-                 (cdr vals))))))
+  (if (null? env)
+      (error "Unbound variable" var)
+      (let loop ((vars (caar env))
+                 (vals (cdar env)))
+        (cond ((null? vars)
+               (environment-lookup (cdr env) var))
+              ((eq? (car vars) var) (car vals))
+              (else
+               (loop (cdr vars)
+                     (cdr vals)))))))
+
+;;; Define the variable var to be the assembly
+;;; expression val in the frame frame.
+(define (frame-define! frame var val)
+  (set-car! frame (cons var (car frame)))
+  (set-cdr! frame (cons val (cdr frame))))
 
 ;;; Define the variable var to be the assembly
 ;;; expression val in the environment env.
 (define (environment-define! env var val)
-  (set-car! env (cons var (car env)))
-  (set-cdr! env (cons val (cdr env))))
+  (let ((frame (car env)))
+    (frame-define! frame var val)))
 
 (define (compile-proc expr port env)
   (let ((name (mangle (cadr expr)))
         (params (caddr expr))
         (body (cdddr expr))
-        (new-env (empty-environment))
+        (new-env (cons (cons '() '()) env))
         (old-toplevel *toplevel*))
     (emit *procedures* "\t.globl ~s" name)
     (emit *procedures* "~s:" name)

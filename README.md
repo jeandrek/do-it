@@ -14,8 +14,8 @@ I would advise against it&hellip;
 * The compiler can only compile to 32-bit x86 AT&T Assembly
   (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
 * No type checking!! Bad programs will probably crash or produce nonsense results!
-* No global variables
 * Probably unstable and buggy, not a mature project
+* Language not standardized
 
 ## Features
 * Local variables (allocated on the stack) and assignment
