@@ -44,16 +44,16 @@
   (and (pair? obj)
        (eq? (car obj) tag)))
 
+(define (return? obj) (tagged-list? obj 'return))
 (define (quote? obj) (tagged-list? obj 'quote))
 (define (begin? obj) (tagged-list? obj 'begin))
 (define (while? obj) (tagged-list? obj 'while))
-(define (if? obj) (tagged-list? obj 'if))
-(define (return? obj) (tagged-list? obj 'return))
 (define (proc? obj) (tagged-list? obj 'proc))
 (define (var? obj) (tagged-list? obj 'var))
 (define (set? obj) (tagged-list? obj 'set))
 (define (for? obj) (tagged-list? obj 'for))
 (define (inc? obj) (tagged-list? obj 'inc))
+(define (if? obj) (tagged-list? obj 'if))
 
 (define application? pair?)
 
