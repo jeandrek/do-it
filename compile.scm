@@ -239,13 +239,19 @@
     (emit *procedures* "\tpushl %ebp")
     (emit *procedures* "\tmovl %esp, %ebp")
     (set! *stack* (cons 0 *stack*))
+
+    ;; Bind parameters to arguments.
     (let loop ((i (* wordsize 2))
                (params params))
       (if (not (null? params))
           (begin
             (environment-define! new-env (car params) i)
             (loop (+ i wordsize) (cdr params)))))
+
+    ;; Compile the procedure body.
     (compile `(begin ,@body) *procedures* new-env)
+
+    ;; Emit cleanup code.
     (cleanup *procedures*)
     (emit *procedures* "\tpopl %ebp")
     (emit *procedures* "\tret")))
