@@ -105,7 +105,8 @@ e.g.
 
 ```scheme
 (for (var i 0) (< var 21) (inc var)
-  (printf "%d\n" i))
+  (printf "%d" i)
+  (newline))
 ```
 
 will print all the integers from 0 to 20 (inclusive).
@@ -115,12 +116,14 @@ This is the same as `(set <name> (+ <name> 1))`
 
 ## Examples
 ```scheme
-(printf "Hello, world!\n")
+(printf "Hello, world!")
+(newline)
 ```
 
 ```scheme
 (proc greet (name)
-  (printf "Hello, %s!\n" name))
+  (printf "Hello, %s!" name)
+  (newline))
 
 ;;; Greet everyone
 ;;; (the names are made up)
@@ -142,5 +145,6 @@ This is the same as `(set <name> (+ <name> 1))`
   (not (> x y)))
 
 (for (var i 0) (<= i 20) (inc i)
-  (printf "The %dth Fibonacci number is %d\n" i (fib i)))
+  (printf "The %dth Fibonacci number is %d" i (fib i))
+  (newline))
 ```
