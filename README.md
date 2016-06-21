@@ -75,6 +75,9 @@ The quote special form returns \<obj\> without evaluating it. (Note that not all
 #### `(begin <exprs ...>)`
 The begin special form evaluates all the \<exprs ...\> in sequential order and returns the last one.
 
+#### `(if <test> <consequent> <alternative ?>)`
+If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evaluated, and if it is not present nothing happens. If \<test\> evaluates to #t, then \<consequent\> is evaluated.
+
 #### `(while <test> <body ...>)`
 The while special form repeatedly evaluates \<body ...\> (as by begin, in fact the compiler adds a begin around the body), as long as \<test\> evaluates to true.
 
