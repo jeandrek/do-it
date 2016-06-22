@@ -370,7 +370,7 @@
   (emit port "\tmovl %esp, %ebp")
   (compile expr port (empty-environment))
   (cleanup port)
-  (emit port "\taddl $~n, %esp" wordsize)
+  (emit port "\tpopl %ebp" wordsize)
   (emit port "\tret")
 
   ;; Emit procedures.
