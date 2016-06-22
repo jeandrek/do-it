@@ -51,6 +51,13 @@ newline(void)
   putchar('\n');
 }
 
+// ref
+int
+ref(int *x)
+{
+  return *x;
+}
+
 int
 main(void)
 {
