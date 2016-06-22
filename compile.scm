@@ -201,8 +201,8 @@
      (emit port "\taddl $~n, %esp" wordsize))
    (cdr expr)))
 
-;;; Emit code to clean up the stack at the end
-;;; of a procedure.
+;;; Emit code to pop variables off the stack at the end
+;;; of a procedure or block.
 (define (cleanup port)
   (let loop ((i (car *stack*)))
     (if (< i 0)
