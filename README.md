@@ -23,7 +23,6 @@ I would advise against it&hellip;
 * For and while loops
 * Procedures (not first class, can take arguments and return a value)
 * Conditionals (if is ternary)
-* Non-local exit (return)
 * Last expression in a procedure is automatically returned &ndash; it would take pointless effort to *not* do that!
 * Super easy to interface with C
 
