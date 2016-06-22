@@ -230,8 +230,19 @@
 ;;; Define the variable var to be the assembly
 ;;; expression val in the frame frame.
 (define (frame-define! frame var val)
-  (set-car! frame (cons var (car frame)))
-  (set-cdr! frame (cons val (cdr frame))))
+  (let loop ((vars (car frame))
+             (vals (cdr frame)))
+    (cond ((null? vars)
+           ;; The frame doesn't already have a variable
+           ;; of this name, create a new binding.
+           (set-car! frame (cons var (car frame)))
+           (set-cdr! frame (cons val (cdr frame))))
+          ((eq? (car vars) var)
+           ;; The frame already has a variable of this
+           ;; name, replace it.
+           (set-car! vals val))
+          (else
+           (loop (cdr vars) (cdr vals))))))
 
 ;;; Define the variable var to be the assembly
 ;;; expression val in the environment env.
