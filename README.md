@@ -100,7 +100,7 @@ The set special form is the assignment operator. It sets the variable \<name\> t
 This is the same as
 
 ```scheme
-(begin
+(block
   <init>
   (while <test>
     <body ...>

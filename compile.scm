@@ -316,7 +316,7 @@
 
 (define (compile-for expr port env)
   (compile
-   `(begin
+   `(block
       ,(cadr expr)
       (while ,(caddr expr)
         ,@(cddddr expr)
