@@ -70,7 +70,7 @@ do-it is call-by-value, so all the arguments are evaluated, then pushed onto the
 do-it has several special forms, but all of them take the form `(<special form name> <arguments> ...)`. The \<arguments\> may or may not be evaluated, the special form chooses. Special forms can do things that procedures can't, like defining a variable or creating a procedure.
 
 #### `(quote <obj>)`
-The quote special form returns \<obj\> without evaluating it. (Note that not all objects that Scheme can read are supported by do-it at runtime, currently only the same objects that are self-evaluating.)
+The quote special form returns \<obj\> without evaluating it. (Note that not all objects that Scheme can read are supported by do-it at runtime, currently only the same objects that are self-evaluating. Actually the only type of object in do-it is a machine word.)
 
 #### `(begin <exprs ...>)`
 The begin special form evaluates all the \<exprs ...\> in sequential order and returns the last one.
