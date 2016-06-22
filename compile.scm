@@ -236,8 +236,7 @@
 ;;; Define the variable var to be the assembly
 ;;; expression val in the environment env.
 (define (environment-define! env var val)
-  (let ((frame (car env)))
-    (frame-define! frame var val)))
+  (frame-define! (car env) var val))
 
 (define (compile-proc expr port env)
   (let ((name (mangle (cadr expr)))
