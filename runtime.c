@@ -58,6 +58,13 @@ ref(int *x)
   return *x;
 }
 
+// set*
+void
+set_42(int *x, int y)
+{
+  *x = y;
+}
+
 int
 main(void)
 {
