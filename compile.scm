@@ -283,6 +283,7 @@
 
 (define (compile-var expr port env)
   (if *toplevel*
+      ;; Define a global variable
       (let ((label (unique-label)))
         (emit *data* "~s:" label)
         (emit *data* "\t.fill 1, ~n, 0" wordsize)
@@ -291,6 +292,7 @@
               (compile (caddr expr) port env)
               (emit port "\tmovl %eax, ~s" label)))
         (environment-define! env (cadr expr) label))
+      ;; Define a local variable
       (begin
         (if (pair? (cddr expr))
             (compile (caddr expr) port env))
