@@ -16,6 +16,7 @@ I would advise against it&hellip;
 * No type checking!! Bad programs will probably crash or produce nonsense results!
 * Probably unstable and buggy, not a mature project
 * Language not standardized
+* Imperative programs can get bugs that declarative programs are immune to
 
 ## Features
 * Lexically scoped local variables (allocated on the stack) and assignment
