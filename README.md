@@ -141,8 +141,7 @@ This is the same as `(set <name> (+ <name> 1))`
 (proc fib (n)
   (if (< n 2)
       n
-      (+ (fib (- n 1))
-         (fib (- n 2)))))
+      (+ (fib (- n 1)) (fib (- n 2)))))
 
 (proc <= (x y)
   (not (> x y)))
