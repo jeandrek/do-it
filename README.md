@@ -18,7 +18,7 @@ I would advise against it&hellip;
 * Language not standardized
 
 ## Features
-* Local variables (allocated on the stack) and assignment
+* Lexically scoped local variables (allocated on the stack) and assignment
 * For and while loops
 * Procedures (not first class, can take arguments and return a value)
 * Conditionals (if is ternary)
