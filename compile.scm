@@ -84,7 +84,8 @@
 ;;; Port for procedures
 (define *procedures* #f)
 
-;;; Stack of the stack index
+;;; Stack of the stack index and how many items
+;;; need to be popped of the stack by cleanup
 (define *stack* '())
 
 ;;; #t if compiling in the global environment,
@@ -204,11 +205,11 @@
 ;;; Emit code to pop variables off the stack at the end
 ;;; of a procedure or block.
 (define (cleanup port)
-  (let loop ((i (car *stack*)))
-    (if (< i 0)
+  (let loop ((i (caar *stack*)))
+    (if (> i 0)
         (begin
           (emit port "\taddl $~n, %esp" wordsize)
-          (loop (+ i wordsize)))))
+          (loop (- i 1)))))
   (set! *stack* (cdr *stack*)))
 
 (define (empty-environment)
@@ -260,7 +261,7 @@
     (emit *procedures* "~s:" name)
     (emit *procedures* "\tpushl %ebp")
     (emit *procedures* "\tmovl %esp, %ebp")
-    (set! *stack* (cons 0 *stack*))
+    (set! *stack* (cons (cons 0 0) *stack*))
     (set! *toplevel* #f)
 
     ;; Bind parameters to arguments.
@@ -298,10 +299,12 @@
         (if (pair? (cddr expr))
             (compile (caddr expr) port env))
         (emit port "\tpushl %eax")
-        (set-car! *stack* (- (car *stack*) wordsize))
+        (set-car! *stack*
+         (cons (+ (caar *stack*) 1)
+               (- (cdar *stack*) wordsize)))
         (environment-define! env (cadr expr)
          (string-append
-          (number->string (car *stack*))
+          (number->string (cdar *stack*))
           "(%ebp)")))))
 
 (define (compile-set expr port env)
@@ -328,7 +331,7 @@
 
 (define (compile-block expr port env)
   (let ((old-toplevel *toplevel*))
-    (set! *stack* (cons (car *stack*) *stack*))
+    (set! *stack* (cons (cons 0 (cdar *stack*)) *stack*))
     (set! *toplevel* #f)
     (compile `(begin ,@(cdr expr))
              port (cons (cons '() '()) env))
@@ -359,7 +362,7 @@
   ;; Intialize global variables.
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
-  (set! *stack* '(0))
+  (set! *stack* (list (cons 0 0)))
   (set! *toplevel* #t)
 
   (emit port "\t.text")
