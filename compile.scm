@@ -57,7 +57,7 @@
 
 (define application? pair?)
 
-(define variable? symbol?)
+(define identifier? symbol?)
 
 ;;; Return #t if obj is an immediate
 ;;; object and #f otherwise.
@@ -306,7 +306,7 @@
   (emit port "\tmovl %eax, ~s" (environment-lookup env (cadr expr))))
 
 ;;; Compile a variable reference.
-(define (compile-variable expr port env)
+(define (compile-variable-ref expr port env)
   (emit port "\tmovl ~s, %eax" (environment-lookup env expr)))
 
 (define (cddddr pair) (cdr (cdddr pair)))
@@ -336,7 +336,7 @@
         ((set? expr) (compile-set expr port env))
         ((for? expr) (compile-for expr port env))
         ((inc? expr) (compile-inc expr port env))
-        ((variable? expr) (compile-variable expr port env))
+        ((identifier? expr) (compile-variable-ref expr port env))
         ((application? expr) (compile-application expr port env))
         (else
          (error "Unknown expression type" expr))))
