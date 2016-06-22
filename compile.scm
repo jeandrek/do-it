@@ -48,6 +48,7 @@
 (define (quote? obj) (tagged-list? obj 'quote))
 (define (begin? obj) (tagged-list? obj 'begin))
 (define (while? obj) (tagged-list? obj 'while))
+(define (block? obj) (tagged-list? obj 'block))
 (define (proc? obj) (tagged-list? obj 'proc))
 (define (var? obj) (tagged-list? obj 'var))
 (define (set? obj) (tagged-list? obj 'set))
@@ -315,7 +316,7 @@
 
 (define (compile-for expr port env)
   (compile
-   `(begin
+   `(block
       ,(cadr expr)
       (while ,(caddr expr)
         ,@(cddddr expr)
@@ -324,6 +325,15 @@
 
 (define (compile-inc expr port env)
   (compile `(set ,(cadr expr) (+ ,(cadr expr) 1)) port env))
+
+(define (compile-block expr port env)
+  (let ((old-toplevel *toplevel*))
+    (set! *stack* (cons (car *stack*) *stack*))
+    (set! *toplevel* #f)
+    (compile `(begin ,@(cdr expr))
+             port (cons (cons '() '()) env))
+    (cleanup port)
+    (set! *toplevel* old-toplevel)))
 
 ;;; Compile an expression.
 (define (compile expr port env)
@@ -338,6 +348,7 @@
         ((set? expr) (compile-set expr port env))
         ((for? expr) (compile-for expr port env))
         ((inc? expr) (compile-inc expr port env))
+        ((block? expr) (compile-block expr port env))
         ((identifier? expr) (compile-variable-ref expr port env))
         ((application? expr) (compile-application expr port env))
         (else
@@ -359,7 +370,7 @@
   (emit port "\tmovl %esp, %ebp")
   (compile expr port (empty-environment))
   (cleanup port)
-  (emit port "\tpopl %ebp")
+  (emit port "\taddl $~n, %esp" wordsize)
   (emit port "\tret")
 
   ;; Emit procedures.

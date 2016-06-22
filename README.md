@@ -18,7 +18,7 @@ I would advise against it&hellip;
 * Language not standardized
 
 ## Features
-* Local variables (allocated on the stack) and assignment
+* Lexically scoped local variables (allocated on the stack) and assignment
 * For and while loops
 * Procedures (not first class, can take arguments and return a value)
 * Conditionals (if is ternary)
@@ -84,8 +84,11 @@ The while special form repeatedly evaluates \<body ...\> (as by begin, in fact t
 #### `(return <expr ?>)`
 The return special form immediately exits from the procedure or program, returning the result of \<expr\> if it is present.
 
+#### `(block <exprs ...>)`
+The block special form evaluates all the \<exprs ...\> in a new lexical scope. All variables bound are local to the block.
+
 #### `(proc <name> (<parameters ...>) <body ...>)`
-The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body\> is executed as by begin.
+The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
 
 #### `(var <name> <init ?>)`
 The var special form defines the variable \<name\>, and sets it to \<init\> if it is present.
@@ -97,7 +100,7 @@ The set special form is the assignment operator. It sets the variable \<name\> t
 This is the same as
 
 ```scheme
-(begin
+(block
   <init>
   (while <test>
     <body ...>
