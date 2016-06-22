@@ -16,6 +16,13 @@ _61(int x, int y)
   return x == y;
 }
 
+// char=?
+int
+char_61_63(char x, char y)
+{
+  return x == y;
+}
+
 // >
 int
 _62(int x, int y)
