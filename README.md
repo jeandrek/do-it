@@ -13,7 +13,7 @@ I would advise against it&hellip;
 * No Garbage Collection
 * The compiler can only compile to 32-bit x86 AT&T Assembly
   (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
-* No type checking!! Bad programs will probably crash or produce nonsense results!
+* No type checking!! (The only type is a machine word.)
 * Probably unstable and buggy, not a mature project
 * Language not standardized
 * Imperative programs can get bugs that declarative programs are immune to
