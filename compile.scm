@@ -327,12 +327,13 @@
   (compile `(set ,(cadr expr) (+ ,(cadr expr) 1)) port env))
 
 (define (compile-block expr port env)
-  (set! *stack* (cons (car *stack*) *stack*))
-
-  (compile `(begin ,@(cdr expr))
-           port (cons (cons '() '()) env))
-
-  (cleanup port))
+  (let ((old-toplevel *toplevel*))
+    (set! *stack* (cons (car *stack*) *stack*))
+    (set! *toplevel* #f)
+    (compile `(begin ,@(cdr expr))
+             port (cons (cons '() '()) env))
+    (cleanup port)
+    (set! *toplevel* old-toplevel)))
 
 ;;; Compile an expression.
 (define (compile expr port env)
@@ -369,7 +370,7 @@
   (emit port "\tmovl %esp, %ebp")
   (compile expr port (empty-environment))
   (cleanup port)
-  (emit port "\tpopl %ebp")
+  (emit port "\taddl $~n, %esp" wordsize)
   (emit port "\tret")
 
   ;; Emit procedures.
