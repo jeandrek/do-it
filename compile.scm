@@ -48,6 +48,7 @@
 (define (quote? obj) (tagged-list? obj 'quote))
 (define (begin? obj) (tagged-list? obj 'begin))
 (define (while? obj) (tagged-list? obj 'while))
+(define (block? obj) (tagged-list? obj 'block))
 (define (proc? obj) (tagged-list? obj 'proc))
 (define (var? obj) (tagged-list? obj 'var))
 (define (set? obj) (tagged-list? obj 'set))
@@ -325,6 +326,14 @@
 (define (compile-inc expr port env)
   (compile `(set ,(cadr expr) (+ ,(cadr expr) 1)) port env))
 
+(define (compile-block expr port env)
+  (set! *stack* (cons (car *stack*) *stack*))
+
+  (compile `(begin ,@(cdr expr))
+           port (cons (cons '() '()) env))
+
+  (cleanup port))
+
 ;;; Compile an expression.
 (define (compile expr port env)
   (cond ((begin? expr) (compile-begin expr port env))
@@ -338,6 +347,7 @@
         ((set? expr) (compile-set expr port env))
         ((for? expr) (compile-for expr port env))
         ((inc? expr) (compile-inc expr port env))
+        ((block? expr) (compile-block expr port env))
         ((identifier? expr) (compile-variable-ref expr port env))
         ((application? expr) (compile-application expr port env))
         (else
