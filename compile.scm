@@ -182,6 +182,7 @@
 (define (compile-return expr port env)
   (if (pair? (cdr expr))
       (compile (cadr expr) port env))
+  (emit port "\tpopl %ebp")
   (emit port "\tret"))
 
 (define (compile-begin expr port env)
@@ -373,7 +374,7 @@
   (emit port "\tmovl %esp, %ebp")
   (compile expr port (empty-environment))
   (cleanup port)
-  (emit port "\tpopl %ebp" wordsize)
+  (emit port "\tpopl %ebp")
   (emit port "\tret")
 
   ;; Emit procedures.
