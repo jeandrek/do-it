@@ -38,7 +38,7 @@ Something like
 guile compile.scm < in.di > out.s
 cc runtime.c out.s -o out
 ```
-(It should work with any R<sup>5</sup>RS-conforming Scheme implementation, make an issue if it does not)
+(It should work with any R<sup>5</sup>RS-conforming Scheme implementation with SRFI 6, make an issue if it does not)
 
 ## Expressions
 A program in do-it is made of a sequence of expressions.
