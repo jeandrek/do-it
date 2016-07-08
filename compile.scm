@@ -157,13 +157,37 @@
           (compile alt port env)
           (emit port "~s:" end-label)))))
 
+;;; Return #t if obj is considered falsey
+;;; by do-it.
+(define (falsey? obj)
+  (or (eq? test #f)
+      (eq? test 0)
+      (eq? test (integer->char 0))))
+
+;;; Return #t if obj is considered truthy
+;;; by do-it.
+(define (truthy? obj)
+  (not (falsey? obj)))
+
+;;; Try to determine if exp will always
+;;; evaluate to a falsey value.
+(define (always-falsey? exp)
+  (cond ((self-evaluating? exp) (falsey? exp))
+        ((quote? exp) (falsey? (cadr exp)))
+        (else #f)))
+
+;;; Try to determine if exp will always
+;;; evaluate to a truthy value.
+(define (always-truthy? exp)
+  (cond ((self-evaluating? exp) (truthy? exp))
+        ((quote? exp) (truthy? (cadr exp)))
+        (else #f)))
+
 (define (compile-while expr port env)
   (let ((loop-label (unique-label))
         (test (cadr expr))
         (body (cddr expr)))
-    (if (and (self-evaluating? test)
-             (not (or (eq? test 0)
-                      (eq? test #f))))
+    (if (always-truthy? exp)
         ;; Infinite loop
         (begin
           (emit port "~s:" loop-label)
