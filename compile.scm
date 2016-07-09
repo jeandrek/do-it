@@ -160,9 +160,9 @@
 ;;; Return #t if obj is considered falsey
 ;;; by do-it.
 (define (falsey? obj)
-  (or (eq? test #f)
-      (eq? test 0)
-      (eq? test (integer->char 0))))
+  (or (eq? obj #f)
+      (zero? obj)
+      (char=? obj (integer->char 0))))
 
 ;;; Return #t if obj is considered truthy
 ;;; by do-it.
