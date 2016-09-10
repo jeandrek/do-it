@@ -6,15 +6,15 @@ do-it is a toy procedural imperative (although everything is an expression for s
 ## Why?
 Because I want to learn about code generation.
 
-### Should I use do-it for my serious real-world program?/Should I learn do-it as my first programming language?
-I would advise against it&hellip;
+### Should I use do-it to write programs?
+No
 
 ## Limitations
 * No Garbage Collection
 * The compiler can only compile to 32-bit x86 AT&T Assembly
   (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
 * No types!! (The only type is a machine word.)
-* Probably unstable and buggy, not a mature project
+* Unstable and buggy
 * Language not standardized
 * Imperative programs can get bugs that declarative programs are immune to
 
@@ -62,48 +62,48 @@ A self-evaluating expression is a constant. Currently the only self-evaluating e
 A variable reference is simply a symbol (identifier) that is the name of the variable to be referenced.
 
 ### Procedure applications
-A procedure application takes the form `(<procedure name> <arguments> ...)`. \<procedure name\> is always symbol that is the name of a procedure. (Like LISP, do-it has seperate namespaces for variables and procedures.) The \<arguments\> can be any type of expression, and they are passed as arguments to the procedure.
+A procedure application takes the form `(<procedure name> <arguments>)`. \<procedure name\> is always symbol that is the name of a procedure. (Like LISP, do-it has seperate namespaces for variables and procedures.) The \<arguments\> can be any type of expression, and they are passed as arguments to the procedure.
 
 do-it is call-by-value, so all the arguments are evaluated, then pushed onto the stack, and then the procedure is called.
 
 ### Special forms
-do-it has several special forms, but all of them take the form `(<special form name> <arguments> ...)`. The \<arguments\> may or may not be evaluated, the special form chooses. Special forms can do things that procedures can't, like defining a variable or creating a procedure.
+do-it has several special forms, but all of them take the form `(<special form name> <arguments>)`. The \<arguments\> may or may not be evaluated, the special form chooses. Special forms can do things that procedures can't, like defining a variable or creating a procedure.
 
 #### `(quote <datum>)`
 The quote special form returns \<datum\> without evaluating it. (Note that not all objects that Scheme can read are supported by do-it at runtime, currently only the same objects that are self-evaluating. Actually the only type of object in do-it is a machine word.)
 
-#### `(begin <body ...>)`
-The begin special form evaluates all the expressions in \<body ...\> in sequential order and returns the last one.
+#### `(begin <body>)`
+The begin special form evaluates all the expressions in \<body\> in sequential order and returns the value of the last one.
 
-#### `(if <test> <consequent> <alternative ?>)`
+#### `(if <test> <consequent> <alternative>)`
 If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evaluated, and if it is not present nothing happens. If \<test\> evaluates to #t, then \<consequent\> is evaluated.
 
-#### `(while <test> <body ...>)`
-The while special form repeatedly evaluates \<body ...\> (as by begin, in fact the compiler adds a begin around the body), as long as \<test\> evaluates to true.
+#### `(while <test> <body>)`
+The while special form repeatedly evaluates \<body\> (as by begin, in fact the compiler adds a begin around the body), as long as \<test\> evaluates to true.
 
-#### `(return <expression ?>)`
+#### `(return <expression>)`
 The return special form immediately exits from the procedure or program, returning the result of \<expression\> if it is present.
 
-#### `(block <body ...>)`
-The block special form evaluates all the expressions in \<body ...\> in a new lexical scope. All variables bound are local to the block.
+#### `(block <body>)`
+The block special form evaluates all the expressions in \<body\> in a new lexical scope. All variables bound are local to the block.
 
-#### `(proc <name> (<parameters ...>) <body ...>)`
-The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to there respective arguments and the \<body ...\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
+#### `(proc <name> (<parameters>) <body ...>)`
+The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
 
-#### `(var <name> <init ?>)`
+#### `(var <name> <init>)`
 The var special form defines the variable \<name\>, and sets it to \<init\> if it is present.
 
 #### `(set <name> <expression>)`
 The set special form is the assignment operator. It sets the variable \<name\> to the value of \<expression\>.
 
-#### `(for <init> <test> <step> <body ...>)`
+#### `(for <init> <test> <step> <body>)`
 This is the same as
 
 ```scheme
 (block
   <init>
   (while <test>
-    <body ...>
+    <body>
     <step>))
 ```
 
