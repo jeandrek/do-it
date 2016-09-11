@@ -146,14 +146,15 @@ Do-it provides these built-in procedures (primitives):
 
 ### Input and output
 
- * `(newline)` &ndash; print a newline to standard out.
+ * `(display string)` &ndash; print the string `string` to standard output.
+ * `(display-line string)` &ndash; print the string `string` to standard output followed by a newline.
+ * `(newline)` &ndash; print a newline to standard output.
 
 In addition to the primitives provided by do-it, you can call any C procedure from do-it (without any header files!).
 
 ## Examples
 ```scheme
-(printf "Hello, world!")
-(newline)
+(display-line "Hello, world!")
 ```
 
 ```scheme
