@@ -56,9 +56,10 @@
 (define (inc? obj) (tagged-list? obj 'inc))
 (define (if? obj) (tagged-list? obj 'if))
 
-(define application? pair?)
+(define (application? expr)
+  (pair? expr))
 
-(define identifier? symbol?)
+(define (variable? expr) (symbol? expr))
 
 ;;; Return #t if obj is an immediate
 ;;; object and #f otherwise.
@@ -178,6 +179,27 @@
           (compile alt port env)
           (emit port "~s:" end-label)))))
 
+(define (compile-while expr port env)
+  (let ((loop-label (unique-label))
+        (test (cadr expr))
+        (body (cddr expr)))
+    (if (not (always-falsey? exp))
+        (if (always-truthy? exp)
+            ;; Infinite loop
+            (begin
+              (emit port "~s:" loop-label)
+              (compile `(begin ,@body) port env)
+              (emit port "  jmp ~s" loop-label))
+            ;; Unknown loop length
+            (let ((end-label (unique-label)))
+              (emit port "~s:" loop-label)
+              (compile test port env)
+              (emit port "  cmpl $0, %eax")
+              (emit port "  je ~s" end-label)
+              (compile `(begin ,@body) port env)
+              (emit port "  jmp ~s" loop-label)
+              (emit port "~s:" end-label))))))
+
 ;;; Return #t if obj is considered falsey
 ;;; by do-it.
 (define (falsey? obj)
@@ -203,26 +225,6 @@
   (cond ((self-evaluating? exp) (truthy? exp))
         ((quote? exp) (truthy? (cadr exp)))
         (else #f)))
-
-(define (compile-while expr port env)
-  (let ((loop-label (unique-label))
-        (test (cadr expr))
-        (body (cddr expr)))
-    (if (always-truthy? exp)
-        ;; Infinite loop
-        (begin
-          (emit port "~s:" loop-label)
-          (compile `(begin ,@body) port env)
-          (emit port "  jmp ~s" loop-label))
-        ;; Unknown loop length
-        (let ((end-label (unique-label)))
-          (emit port "~s:" loop-label)
-          (compile test port env)
-          (emit port "  cmpl $0, %eax")
-          (emit port "  je ~s" end-label)
-          (compile `(begin ,@body) port env)
-          (emit port "  jmp ~s" loop-label)
-          (emit port "~s:" end-label)))))
 
 (define (compile-return expr port env)
   (if (pair? (cdr expr))
