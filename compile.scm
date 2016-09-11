@@ -81,7 +81,7 @@
 (define *procedures* #f)
 
 ;;; Stack of the stack index and how many items
-;;; need to be popped of the stack by cleanup
+;;; need to be popped of the stack by CLEANUP
 (define *stack* '())
 
 ;;; #T if compiling in the global environment,
