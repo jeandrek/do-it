@@ -148,7 +148,8 @@
               (cons (cons name proc) *special-forms*)))))
 
 (define (get-special-form name)
-  (cdr (assq name *special-forms*)))
+  (let ((pair (assq name *special-forms*)))
+    (and pair (cdr pair))))
 
 ;;; Compile a datum.
 (define (compile-datum obj port)
