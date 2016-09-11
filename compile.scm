@@ -50,26 +50,26 @@
 
 (define (variable? exp) (symbol? exp))
 
-;;; Return #t if obj is an immediate
-;;; object and #f otherwise.
+;;; Return #T if OBJ is an immediate
+;;; object and #F otherwise.
 (define (immediate? obj)
   (or (integer? obj)
       (boolean? obj)
       (char? obj)))
 
-;;; Return #t if exp is a self-evaluating
-;;; expession and #f otherwise.
+;;; Return #T if EXP is a self-evaluating
+;;; expession and #F otherwise.
 (define (self-evaluating? exp)
   (or (immediate? exp)
       (string? exp)))
 
-;;; Return #t if obj is a pair and the
-;;; car of obj is tag and #f otherwise.
+;;; Return #T if OBJ is a pair and the
+;;; CAR of OBJ is TAG and #F otherwise.
 (define (tagged-list? obj tag)
   (and (pair? obj)
        (eq? (car obj) tag)))
 
-;;; Return the immediate representation of obj.
+;;; Return the immediate representation of OBJ.
 (define (immediate-rep obj)
   (cond ((number? obj) obj)
         ((boolean? obj) (if obj 1 0))
@@ -84,16 +84,18 @@
 ;;; need to be popped of the stack by cleanup
 (define *stack* '())
 
-;;; #t if compiling in the global environment,
-;;; #f otherwise.
+;;; #T if compiling in the global environment,
+;;; #F otherwise.
 (define *toplevel* #f)
 
-;;; Return a unique label.
-(define unique-label
+;;; Return a new unique label containing NAME.
+(define make-label
   (let ((count 0))
-    (lambda ()
+    (lambda (name)
       (set! count (+ count 1))
-      (string-append "L_" (number->string count)))))
+      (string-append name
+                     "_"
+                     (number->string count)))))
 
 ;;; Turn a Scheme symbol into an x86 symbol.
 (define (mangle sym)
@@ -156,7 +158,7 @@
   (cond ((immediate? obj)
          (emit port "  movl $~n, %eax" (immediate-rep obj)))
         ((string? obj)
-         (let ((label (unique-label)))
+         (let ((label (make-label "string")))
            (emit *data* "~s:" label)
            (emit *data* "  .asciz ~v" obj)
            (emit port "  movl $~s, %eax" label)))
@@ -168,7 +170,7 @@
                     (compile-datum (cadr exp) port)))
 
 (define (compile-if exp port env)
-  (let ((end-label (unique-label))
+  (let ((end-label (make-label "if_end"))
         (test (cadr exp))
         (conseq (caddr exp)))
     (if (null? (cdddr exp))
@@ -180,7 +182,7 @@
           (compile conseq port env)
           (emit port "~s:" end-label))
         ;; Alternative
-        (let ((alt-label (unique-label))
+        (let ((alt-label (make-label "if_alt"))
               (alt (cadddr exp)))
           (compile test port env)
           (emit port "  cmpl $0, %eax")
@@ -194,7 +196,7 @@
 (put-special-form 'if compile-if)
 
 (define (compile-while exp port env)
-  (let ((loop-label (unique-label))
+  (let ((loop-label (make-label "while_loop"))
         (test (cadr exp))
         (body (cddr exp)))
     (if (not (always-falsey? exp))
@@ -205,7 +207,7 @@
               (compile `(begin ,@body) port env)
               (emit port "  jmp ~s" loop-label))
             ;; Unknown loop length
-            (let ((end-label (unique-label)))
+            (let ((end-label (make-label "while_end")))
               (emit port "~s:" loop-label)
               (compile test port env)
               (emit port "  cmpl $0, %eax")
@@ -216,25 +218,25 @@
 
 (put-special-form 'while compile-while)
 
-;;; Return #t if obj is considered falsey
+;;; Return #T if OBJ is considered falsey
 ;;; by do-it.
 (define (falsey? obj)
   (or (eq? obj #f)
       (= obj 0)))
 
-;;; Return #t if obj is considered truthy
+;;; Return #T if OBJ is considered truthy
 ;;; by do-it.
 (define (truthy? obj)
   (not (falsey? obj)))
 
-;;; Try to determine if exp will always
+;;; Try to determine if EXP will always
 ;;; evaluate to a falsey value.
 (define (always-falsey? exp)
   (cond ((self-evaluating? exp) (falsey? exp))
         ((quotation? exp) (falsey? (cadr exp)))
         (else #f)))
 
-;;; Try to determine if exp will always
+;;; Try to determine if EXP will always
 ;;; evaluate to a truthy value.
 (define (always-truthy? exp)
   (cond ((self-evaluating? exp) (truthy? exp))
@@ -351,7 +353,7 @@
 (define (compile-defvar exp port env)
   (if *toplevel*
       ;; Define a global variable
-      (let ((label (unique-label)))
+      (let ((label (make-label "variable")))
         (emit *data* "~s:" label)
         (emit *data* "  .fill 1, ~n, 0" wordsize)
         (if (pair? (cddr exp))
@@ -442,8 +444,8 @@
   (emit port "  .data")
   (display (get-output-string *data*) port))
 
-;;; Read a program from the port input and
-;;; compile it to the port output.
+;;; Read a program from the port INPUT and
+;;; compile it to the port OUTPUT.
 (define (compile-file input output)
   (let loop ((accum '(begin)))
     (let ((exp (read input)))
