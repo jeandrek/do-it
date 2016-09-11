@@ -51,6 +51,20 @@ not(int x)
   return !x;
 }
 
+// display
+void
+display(char *str)
+{
+  fputs(str, stdout);
+}
+
+// display-line
+void
+display_line(char *str)
+{
+  printf("%s\n", str);
+}
+
 // newline
 void
 newline(void)
