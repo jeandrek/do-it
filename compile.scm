@@ -38,17 +38,17 @@
                 (loop (cdr lst) args))))))
   (newline port))
 
-(define (special-form? expr)
-  (and (pair? expr)
-       (get-special-form (car expr))))
+(define (special-form? exp)
+  (and (pair? exp)
+       (get-special-form (car exp))))
 
-(define (quotation? expr)
-  (tagged-list? expr 'quote))
+(define (quotation? exp)
+  (tagged-list? exp 'quote))
 
-(define (application? expr)
-  (pair? expr))
+(define (application? exp)
+  (pair? exp))
 
-(define (variable? expr) (symbol? expr))
+(define (variable? exp) (symbol? exp))
 
 ;;; Return #t if obj is an immediate
 ;;; object and #f otherwise.
@@ -57,11 +57,11 @@
       (boolean? obj)
       (char? obj)))
 
-;;; Return #t if expr is a self-evaluating
-;;; expression and #f otherwise.
-(define (self-evaluating? expr)
-  (or (immediate? expr)
-      (string? expr)))
+;;; Return #t if exp is a self-evaluating
+;;; expession and #f otherwise.
+(define (self-evaluating? exp)
+  (or (immediate? exp)
+      (string? exp)))
 
 ;;; Return #t if obj is a pair and the
 ;;; car of obj is tag and #f otherwise.
@@ -166,11 +166,11 @@
                   (lambda (exp port env)
                     (compile-datum (cadr exp) port)))
 
-(define (compile-if expr port env)
+(define (compile-if exp port env)
   (let ((end-label (unique-label))
-        (test (cadr expr))
-        (conseq (caddr expr)))
-    (if (null? (cdddr expr))
+        (test (cadr exp))
+        (conseq (caddr exp)))
+    (if (null? (cdddr exp))
         ;; No alternative
         (begin
           (compile test port env)
@@ -180,7 +180,7 @@
           (emit port "~s:" end-label))
         ;; Alternative
         (let ((alt-label (unique-label))
-              (alt (cadddr expr)))
+              (alt (cadddr exp)))
           (compile test port env)
           (emit port "  cmpl $0, %eax")
           (emit port "  je ~s" alt-label)
@@ -192,10 +192,10 @@
 
 (put-special-form 'if compile-if)
 
-(define (compile-while expr port env)
+(define (compile-while exp port env)
   (let ((loop-label (unique-label))
-        (test (cadr expr))
-        (body (cddr expr)))
+        (test (cadr exp))
+        (body (cddr exp)))
     (if (not (always-falsey? exp))
         (if (always-truthy? exp)
             ;; Infinite loop
@@ -240,33 +240,33 @@
         ((quotation? exp) (truthy? (cadr exp)))
         (else #f)))
 
-(define (compile-return expr port env)
-  (if (pair? (cdr expr))
-      (compile (cadr expr) port env))
+(define (compile-return exp port env)
+  (if (pair? (cdr exp))
+      (compile (cadr exp) port env))
   (emit port "  popl %ebp")
   (emit port "  ret"))
 
 (put-special-form 'return compile-return)
 
-(define (compile-begin expr port env)
+(define (compile-begin exp port env)
   (for-each
    (lambda (x) (compile x port env))
-   (cdr expr)))
+   (cdr exp)))
 
 (put-special-form 'begin compile-begin)
 
 ;;; Compile a procedure application.
-(define (compile-application expr port env)
+(define (compile-application exp port env)
   (for-each
    (lambda (x)
      (compile x port env)
      (emit port "  pushl %eax"))
-   (reverse (cdr expr)))
-  (emit port "  call ~s" (mangle (car expr)))
+   (reverse (cdr exp)))
+  (emit port "  call ~s" (mangle (car exp)))
   (for-each
    (lambda (x)
      (emit port "  addl $~n, %esp" wordsize))
-   (cdr expr)))
+   (cdr exp)))
 
 ;;; Emit code to pop variables off the stack at the end
 ;;; of a procedure or block.
@@ -281,7 +281,7 @@
 (define (empty-environment)
   (list (cons '() '())))
 
-;;; Get the assembly expression pointing to the value
+;;; Get the assembly expession pointing to the value
 ;;; of the variable var from the environment env.
 (define (environment-lookup env var)
   (if (null? env)
@@ -296,7 +296,7 @@
                      (cdr vals)))))))
 
 ;;; Define the variable var to be the assembly
-;;; expression val in the frame frame.
+;;; expession val in the frame frame.
 (define (frame-define! frame var val)
   (let loop ((vars (car frame))
              (vals (cdr frame)))
@@ -313,14 +313,14 @@
            (loop (cdr vars) (cdr vals))))))
 
 ;;; Define the variable var to be the assembly
-;;; expression val in the environment env.
+;;; expession val in the environment env.
 (define (environment-define! env var val)
   (frame-define! (car env) var val))
 
-(define (compile-defproc expr port env)
-  (let ((name (mangle (cadr expr)))
-        (params (caddr expr))
-        (body (cdddr expr))
+(define (compile-defproc exp port env)
+  (let ((name (mangle (cadr exp)))
+        (params (caddr exp))
+        (body (cdddr exp))
         (new-env (cons (cons '() '()) env))
         (old-toplevel *toplevel*))
     (emit *procedures* "  .globl ~s" name)
@@ -347,80 +347,80 @@
 
 (put-special-form 'defproc compile-defproc)
 
-(define (compile-defvar expr port env)
+(define (compile-defvar exp port env)
   (if *toplevel*
       ;; Define a global variable
       (let ((label (unique-label)))
         (emit *data* "~s:" label)
         (emit *data* "  .fill 1, ~n, 0" wordsize)
-        (if (pair? (cddr expr))
+        (if (pair? (cddr exp))
             (begin
-              (compile (caddr expr) port env)
+              (compile (caddr exp) port env)
               (emit port "  movl %eax, ~s" label)))
-        (environment-define! env (cadr expr) label))
+        (environment-define! env (cadr exp) label))
       ;; Define a local variable
       (begin
-        (if (pair? (cddr expr))
-            (compile (caddr expr) port env))
+        (if (pair? (cddr exp))
+            (compile (caddr exp) port env))
         (emit port "  pushl %eax")
         (set-car! *stack*
          (cons (+ (caar *stack*) 1)
                (- (cdar *stack*) wordsize)))
-        (environment-define! env (cadr expr)
+        (environment-define! env (cadr exp)
          (string-append
           (number->string (cdar *stack*))
           "(%ebp)")))))
 
 (put-special-form 'defvar compile-defvar)
 
-(define (compile-set expr port env)
-  (compile (caddr expr) port env)
-  (emit port "  movl %eax, ~s" (environment-lookup env (cadr expr))))
+(define (compile-set exp port env)
+  (compile (caddr exp) port env)
+  (emit port "  movl %eax, ~s" (environment-lookup env (cadr exp))))
 
 (put-special-form 'set compile-set)
 
 ;;; Compile a variable reference.
-(define (compile-variable expr port env)
-  (emit port "  movl ~s, %eax" (environment-lookup env expr)))
+(define (compile-variable exp port env)
+  (emit port "  movl ~s, %eax" (environment-lookup env exp)))
 
-(define (compile-for expr port env)
+(define (compile-for exp port env)
   (compile
    `(block
-      ,(cadr expr)
-      (while ,(caddr expr)
-        ,@(cddddr expr)
-        ,(cadddr expr)))
+      ,(cadr exp)
+      (while ,(caddr exp)
+        ,@(cddddr exp)
+        ,(cadddr exp)))
    port env))
 
 (put-special-form 'for compile-for)
 
-(define (compile-inc expr port env)
-  (compile `(set ,(cadr expr) (+ ,(cadr expr) 1)) port env))
+(define (compile-inc exp port env)
+  (compile `(set ,(cadr exp) (+ ,(cadr exp) 1)) port env))
 
 (put-special-form 'inc compile-inc)
 
-(define (compile-block expr port env)
+(define (compile-block exp port env)
   (let ((old-toplevel *toplevel*))
     (set! *stack* (cons (cons 0 (cdar *stack*)) *stack*))
     (set! *toplevel* #f)
-    (compile `(begin ,@(cdr expr))
+    (compile `(begin ,@(cdr exp))
              port (cons (cons '() '()) env))
     (cleanup port)
     (set! *toplevel* old-toplevel)))
 
 (put-special-form 'block compile-block)
 
-;;; Compile an expression.
-(define (compile expr port env)
-  (cond ((self-evaluating? expr) (compile-datum expr port))
-        ((variable? expr) (compile-variable expr port env))
-        ((special-form? expr)
-         ((get-special-form (car expr)) expr port env))
-        ((application? expr) (compile-application expr port env))
-        (else (error "Unknown expression type" expr))))
+;;; Compile an expession.
+(define (compile exp port env)
+  (cond ((self-evaluating? exp) (compile-datum exp port))
+        ((variable? exp) (compile-variable exp port env))
+        ((special-form? exp)
+         ((get-special-form (car exp)) exp port env))
+        ((application? exp) (compile-application exp port env))
+        (else (error "Unknown expession type" exp))))
 
 ;;; Compile a program.
-(define (compile-program expr port)
+(define (compile-program exp port)
   ;; Intialize global variables.
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
@@ -431,7 +431,7 @@
   (emit port "entry:")
   (emit port "  pushl %ebp")
   (emit port "  movl %esp, %ebp")
-  (compile expr port (empty-environment))
+  (compile exp port (empty-environment))
   (cleanup port)
   (emit port "  popl %ebp")
   (emit port "  ret")
@@ -445,9 +445,9 @@
 ;;; compile it to the port output.
 (define (compile-file input output)
   (let loop ((accum '(begin)))
-    (let ((expr (read input)))
-      (if (eof-object? expr)
+    (let ((exp (read input)))
+      (if (eof-object? exp)
           (compile-program (reverse accum) output)
-          (loop (cons expr accum))))))
+          (loop (cons exp accum))))))
 
 (compile-file (current-input-port) (current-output-port))
