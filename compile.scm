@@ -435,7 +435,7 @@
   (emit port "  movq %rsp, %rbp")
   (compile exp port (empty-environment))
   (cleanup port)
-  (emit port "  popq %ebp")
+  (emit port "  popq %rbp")
   (emit port "  ret")
   ;; Emit procedures.
   (display (get-output-string *procedures*) port)
