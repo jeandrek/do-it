@@ -70,31 +70,32 @@ do-it is call-by-value, so all the arguments are evaluated, then pushed onto the
 do-it has several special forms, but all of them take the form `(<special form name> <arguments>)`. The \<arguments\> may or may not be evaluated, the special form chooses. Special forms can do things that procedures can't, like defining a variable or creating a procedure.
 
 #### `(quote <datum>)`
-The quote special form returns \<datum\> without evaluating it. (Note that not all objects that Scheme can read are supported by do-it at runtime, currently only the same objects that are self-evaluating. Actually the only type of object in do-it is a machine word.)
+#### `'<datum>`
+`Quote` returns \<datum\> without evaluating it. (Note that not all objects that Scheme can read are supported by do-it at runtime, currently only the same objects that are self-evaluating. Actually the only type of object in do-it is a machine word.) The second form is an abbreviation for the first form.
 
 #### `(begin <body>)`
-The begin special form evaluates all the expressions in \<body\> in sequential order and returns the value of the last one.
+`Begin` evaluates all the expressions in \<body\> in sequential order and returns the value of the last one.
 
 #### `(if <test> <consequent> <alternative>)`
 If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evaluated, and if it is not present nothing happens. If \<test\> evaluates to #t, then \<consequent\> is evaluated.
 
 #### `(while <test> <body>)`
-The while special form repeatedly evaluates \<body\> (as by begin, in fact the compiler adds a begin around the body), as long as \<test\> evaluates to true.
+`While` repeatedly evaluates \<body\> (as by `begin`, in fact the compiler adds a `begin` around the body), as long as \<test\> evaluates to true.
 
 #### `(return <expression>)`
-The return special form immediately exits from the procedure or program, returning the result of \<expression\> if it is present.
+`Return` immediately exits from the procedure or program, returning the result of \<expression\> if it is present.
 
 #### `(block <body>)`
-The block special form evaluates all the expressions in \<body\> in a new lexical scope. All variables bound are local to the block.
+`Block` evaluates all the expressions in \<body\> in a new lexical scope. All variables bound are local to the block.
 
-#### `(proc <name> (<parameters>) <body ...>)`
-The proc special form defines a procedure, like LISP's defun. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
+#### `(proc <name> (<parameters>) <body>)`
+`Proc` defines a procedure, like LISP's `defun`. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
 
 #### `(var <name> <init>)`
-The var special form defines the variable \<name\>, and sets it to \<init\> if it is present.
+`Var` defines the variable \<name\>, and sets it to \<init\> if it is present.
 
 #### `(set <name> <expression>)`
-The set special form is the assignment operator. It sets the variable \<name\> to the value of \<expression\>.
+`Set` is the assignment operator. It replaces the value of the variable \<name\> with the value of \<expression\>.
 
 #### `(for <init> <test> <step> <body>)`
 This is the same as
