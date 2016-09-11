@@ -32,6 +32,7 @@ No
 - [ ] Macros(?), make `for` and `inc` macros
 - [x] ~~Global variables~~ (added)
 - [ ] Linking multiple files
+- [ ] Abstract syntax(?)
 
 ## Usage
 Something like
