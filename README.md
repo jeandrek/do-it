@@ -22,7 +22,7 @@ No
 * Lexically scoped local variables (allocated on the stack) and assignment
 * For and while loops
 * Procedures (not first class, can take arguments and return a value)
-* Conditionals (if is ternary)
+* Conditionals (`if` is ternary)
 * Last expression in a procedure is automatically returned &ndash; it would take pointless effort to *not* do that!
 * Super easy to interface with C
 
