@@ -101,37 +101,58 @@
 
 ;;; Turn a Scheme symbol into an x86 symbol.
 (define (mangle sym)
-  (define (mangle-aux lst)
+  (define (helper lst)
     (if (null? lst)
         '()
         (let ((char (car lst)))
           (cond ((char=? (car lst) #\-)
-                 (cons #\_ (mangle-aux (cdr lst))))
+                 (cons #\_ (helper (cdr lst))))
                 ((or (char-alphabetic? char)
                      (char-numeric? char))
-                 (cons char (mangle-aux (cdr lst))))
+                 (cons char (helper (cdr lst))))
                 (else
                  (append
                   '(#\_)
-                  (string->list (number->string (char->integer char)))
-                  (mangle-aux (cdr lst))))))))
-
+                  (string->list (number->string (char->ascii-code char)))
+                  (helper (cdr lst))))))))
   (list->string
-   (mangle-aux (string->list (symbol->string sym)))))
+   (helper (string->list (symbol->string sym)))))
+
+(define ascii-table
+  '((#\newline 10)
+    (#\space 32)
+    (#\! 33) (#\" 34) (#\# 35) (#\$ 36) (#\% 37) (#\& 38) (#\' 39)
+    (#\( 40) (#\) 41) (#\* 42) (#\+ 43) (#\, 44) (#\- 45) (#\. 46)
+    (#\/ 47) (#\0 48) (#\1 49) (#\2 50) (#\3 51) (#\4 52) (#\5 53)
+    (#\6 54) (#\7 55) (#\8 56) (#\9 57) (#\: 58) (#\; 59) (#\< 60)
+    (#\= 61) (#\> 62) (#\? 63) (#\@ 64) (#\A 65) (#\B 66) (#\C 67)
+    (#\D 68) (#\E 69) (#\F 70) (#\G 71) (#\H 72) (#\I 73) (#\J 74)
+    (#\K 75) (#\L 76) (#\M 77) (#\N 78) (#\O 79) (#\P 80) (#\Q 81)
+    (#\R 82) (#\S 83) (#\T 84) (#\U 85) (#\V 86) (#\W 87) (#\X 88)
+    (#\Y 89) (#\Z 90) (#\[ 91) (#\\ 92) (#\] 93) (#\^ 94) (#\_ 95)
+    (#\` 96) (#\a 97) (#\b 98) (#\c 99) (#\d 100) (#\e 101) (#\f 102)
+    (#\g 103) (#\h 104) (#\i 105) (#\j 106) (#\k 107) (#\l 108) (#\m 109)
+    (#\n 110) (#\o 111) (#\p 112) (#\q 113) (#\r 114) (#\s 115) (#\t 116)
+    (#\u 117) (#\v 118) (#\w 119) (#\x 120) (#\y 121) (#\z 122) (#\{ 123)
+    (#\| 124) (#\} 135) (#\~ 136)))
+
+(define (char->ascii-code char)
+  (let ((pair (assv char ascii-table)))
+    (if pair
+        (cadr pair)
+        (error "Not a valid character" char))))
 
 ;;; Compile a datum.
 (define (compile-datum obj port)
   (cond ((immediate? obj)
-         (emit port "\tmovl $~n, %eax" (immediate-rep obj)))
+         (emit port "  movl $~n, %eax" (immediate-rep obj)))
         ((string? obj)
          (let ((label (unique-label)))
            (emit *data* "~s:" label)
-           (emit *data* "\t.asciz ~v" obj)
-           (emit port "\tmovl $~s, %eax" label)))
+           (emit *data* "  .asciz ~v" obj)
+           (emit port "  movl $~s, %eax" label)))
         (else
          (error "Unknown datum type" obj))))
-
-(define (cadddr pair) (car (cdddr pair)))
 
 (define (compile-if expr port env)
   (let ((end-label (unique-label))
@@ -141,18 +162,18 @@
         ;; No alternative
         (begin
           (compile test port env)
-          (emit port "\tcmpl $0, %eax")
-          (emit port "\tje ~s" end-label)
+          (emit port "  cmpl $0, %eax")
+          (emit port "  je ~s" end-label)
           (compile conseq port env)
           (emit port "~s:" end-label))
         ;; Alternative
         (let ((alt-label (unique-label))
               (alt (cadddr expr)))
           (compile test port env)
-          (emit port "\tcmpl $0, %eax")
-          (emit port "\tje ~s" alt-label)
+          (emit port "  cmpl $0, %eax")
+          (emit port "  je ~s" alt-label)
           (compile conseq port env)
-          (emit port "\tjmp ~s" end-label)
+          (emit port "  jmp ~s" end-label)
           (emit port "~s:" alt-label)
           (compile alt port env)
           (emit port "~s:" end-label)))))
@@ -192,22 +213,22 @@
         (begin
           (emit port "~s:" loop-label)
           (compile `(begin ,@body) port env)
-          (emit port "\tjmp ~s" loop-label))
+          (emit port "  jmp ~s" loop-label))
         ;; Unknown loop length
         (let ((end-label (unique-label)))
           (emit port "~s:" loop-label)
           (compile test port env)
-          (emit port "\tcmpl $0, %eax")
-          (emit port "\tje ~s" end-label)
+          (emit port "  cmpl $0, %eax")
+          (emit port "  je ~s" end-label)
           (compile `(begin ,@body) port env)
-          (emit port "\tjmp ~s" loop-label)
+          (emit port "  jmp ~s" loop-label)
           (emit port "~s:" end-label)))))
 
 (define (compile-return expr port env)
   (if (pair? (cdr expr))
       (compile (cadr expr) port env))
-  (emit port "\tpopl %ebp")
-  (emit port "\tret"))
+  (emit port "  popl %ebp")
+  (emit port "  ret"))
 
 (define (compile-begin expr port env)
   (for-each
@@ -219,12 +240,12 @@
   (for-each
    (lambda (x)
      (compile x port env)
-     (emit port "\tpushl %eax"))
+     (emit port "  pushl %eax"))
    (reverse (cdr expr)))
-  (emit port "\tcall ~s" (mangle (car expr)))
+  (emit port "  call ~s" (mangle (car expr)))
   (for-each
    (lambda (x)
-     (emit port "\taddl $~n, %esp" wordsize))
+     (emit port "  addl $~n, %esp" wordsize))
    (cdr expr)))
 
 ;;; Emit code to pop variables off the stack at the end
@@ -233,7 +254,7 @@
   (let loop ((i (caar *stack*)))
     (if (> i 0)
         (begin
-          (emit port "\taddl $~n, %esp" wordsize)
+          (emit port "  addl $~n, %esp" wordsize)
           (loop (- i 1)))))
   (set! *stack* (cdr *stack*)))
 
@@ -282,13 +303,12 @@
         (body (cdddr expr))
         (new-env (cons (cons '() '()) env))
         (old-toplevel *toplevel*))
-    (emit *procedures* "\t.globl ~s" name)
+    (emit *procedures* "  .globl ~s" name)
     (emit *procedures* "~s:" name)
-    (emit *procedures* "\tpushl %ebp")
-    (emit *procedures* "\tmovl %esp, %ebp")
+    (emit *procedures* "  pushl %ebp")
+    (emit *procedures* "  movl %esp, %ebp")
     (set! *stack* (cons (cons 0 0) *stack*))
     (set! *toplevel* #f)
-
     ;; Bind parameters to arguments.
     (let loop ((i (* wordsize 2))
                (params params))
@@ -297,15 +317,12 @@
             (environment-define! new-env (car params)
              (string-append (number->string i) "(%ebp)"))
             (loop (+ i wordsize) (cdr params)))))
-
     ;; Compile the procedure body.
     (compile `(begin ,@body) *procedures* new-env)
-
     ;; Emit cleanup code.
     (cleanup *procedures*)
-    (emit *procedures* "\tpopl %ebp")
-    (emit *procedures* "\tret")
-
+    (emit *procedures* "  popl %ebp")
+    (emit *procedures* "  ret")
     (set! *toplevel* old-toplevel)))
 
 (define (compile-var expr port env)
@@ -313,17 +330,17 @@
       ;; Define a global variable
       (let ((label (unique-label)))
         (emit *data* "~s:" label)
-        (emit *data* "\t.fill 1, ~n, 0" wordsize)
+        (emit *data* "  .fill 1, ~n, 0" wordsize)
         (if (pair? (cddr expr))
             (begin
               (compile (caddr expr) port env)
-              (emit port "\tmovl %eax, ~s" label)))
+              (emit port "  movl %eax, ~s" label)))
         (environment-define! env (cadr expr) label))
       ;; Define a local variable
       (begin
         (if (pair? (cddr expr))
             (compile (caddr expr) port env))
-        (emit port "\tpushl %eax")
+        (emit port "  pushl %eax")
         (set-car! *stack*
          (cons (+ (caar *stack*) 1)
                (- (cdar *stack*) wordsize)))
@@ -334,11 +351,11 @@
 
 (define (compile-set expr port env)
   (compile (caddr expr) port env)
-  (emit port "\tmovl %eax, ~s" (environment-lookup env (cadr expr))))
+  (emit port "  movl %eax, ~s" (environment-lookup env (cadr expr))))
 
 ;;; Compile a variable reference.
 (define (compile-variable-ref expr port env)
-  (emit port "\tmovl ~s, %eax" (environment-lookup env expr)))
+  (emit port "  movl ~s, %eax" (environment-lookup env expr)))
 
 (define (cddddr pair) (cdr (cdddr pair)))
 
@@ -389,23 +406,19 @@
   (set! *procedures* (open-output-string))
   (set! *stack* (list (cons 0 0)))
   (set! *toplevel* #t)
-
-  (emit port "\t.text")
-
-  (emit port "\t.globl entry")
+  (emit port "  .text")
+  (emit port "  .globl entry")
   (emit port "entry:")
-  (emit port "\tpushl %ebp")
-  (emit port "\tmovl %esp, %ebp")
+  (emit port "  pushl %ebp")
+  (emit port "  movl %esp, %ebp")
   (compile expr port (empty-environment))
   (cleanup port)
-  (emit port "\tpopl %ebp")
-  (emit port "\tret")
-
+  (emit port "  popl %ebp")
+  (emit port "  ret")
   ;; Emit procedures.
   (display (get-output-string *procedures*) port)
-
   ;; Emit data.
-  (emit port "\t.data")
+  (emit port "  .data")
   (display (get-output-string *data*) port))
 
 ;;; Read a program from the port input and
