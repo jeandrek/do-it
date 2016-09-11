@@ -1,5 +1,5 @@
 # do-it
-do-it is a toy procedural imperative (although everything is an expression for simplicity) programming language I'm writing to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme.
+Do-it is a toy procedural imperative (although everything is an expression for simplicity) programming language I'm writing to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme.
 
 **Warning: Perhaps messy code!** Suggestions are very welcome.
 
@@ -27,9 +27,10 @@ No
 * Super easy to interface with C
 
 ## Todo
-- [ ] Macros(?), make FOR and INC macros
-- [ ] Garbage collection(?)
-- [x] ~~Global variables~~ (ADDED)
+- [ ] Dynamic typing(?)
+- - [ ] Garbage collection(?)
+- [ ] Macros(?), make `for` and `inc` macros
+- [x] ~~Global variables~~ (added)
 - [ ] Linking multiple files
 
 ## Usage
@@ -56,7 +57,7 @@ A self-evaluating expression is a constant. Currently the only self-evaluating e
 * Fixnums (do-it currently doesn't bother to check that an integer will fit in a fixnum&hellip;), e.g. `4`
 * Booleans, i.e. `#t` for true or `#f` for false
 * Characters, e.g. `#\a`
-* Strings, e.g. `"Hello, world!"`
+* Strings of characters, e.g. `"Hello, world!"`
 
 ### Variable references
 A variable reference is simply a symbol (identifier) that is the name of the variable to be referenced.
@@ -64,17 +65,17 @@ A variable reference is simply a symbol (identifier) that is the name of the var
 ### Procedure applications
 A procedure application takes the form `(<procedure name> <arguments>)`. \<procedure name\> is always symbol that is the name of a procedure. (Like LISP, do-it has seperate namespaces for variables and procedures.) The \<arguments\> can be any type of expression, and they are passed as arguments to the procedure.
 
-do-it is call-by-value, so all the arguments are evaluated, then pushed onto the stack, and then the procedure is called.
+Do-it is call-by-value, so all the arguments are evaluated, then pushed onto the stack, and then the procedure is called.
 
 ### Special forms
-do-it has several special forms, but all of them take the form `(<special form name> <arguments>)`. The \<arguments\> may or may not be evaluated, the special form chooses. Special forms can do things that procedures can't, like defining a variable or creating a procedure.
+Do-it has several special forms, but all of them take the form `(<special form name> <arguments>)`. The \<arguments\> may or may not be evaluated, the special form chooses. Special forms can do things that procedures can't, like defining a variable or creating a procedure.
 
 #### `(quote <datum>)`
 #### `'<datum>`
 `Quote` returns \<datum\> without evaluating it. (Note that not all objects that Scheme can read are supported by do-it at runtime, currently only the same objects that are self-evaluating. Actually the only type of object in do-it is a machine word.) The second form is an abbreviation for the first form.
 
 #### `(begin <body>)`
-`Begin` evaluates all the expressions in \<body\> in sequential order and returns the value of the last one.
+`Begin` evaluates all the expressions in \<body\> sequentially and returns the value of the last one.
 
 #### `(if <test> <consequent> <alternative>)`
 If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evaluated, and if it is not present nothing happens. If \<test\> evaluates to #t, then \<consequent\> is evaluated.
@@ -86,7 +87,7 @@ If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evalu
 `Return` immediately exits from the procedure or program, returning the result of \<expression\> if it is present.
 
 #### `(block <body>)`
-`Block` evaluates all the expressions in \<body\> in a new lexical scope. All variables bound are local to the block.
+`Block` evaluates all the expressions in \<body\> in a new lexical scope. All variables bound with `var` in the \<body\> are local to the block.
 
 #### `(proc <name> (<parameters>) <body>)`
 `Proc` defines a procedure, like LISP's `defun`. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
@@ -119,7 +120,7 @@ e.g.
 will print all the integers from 0 to 20 (inclusive).
 
 #### `(inc <name>)`
-This is the same as `(set <name> (+ <name> 1))`
+This is the same as `(set <name> (+ <name> 1))`.
 
 ## Examples
 ```scheme
