@@ -38,23 +38,12 @@
                 (loop (cdr lst) args))))))
   (newline port))
 
-;;; Return #t if obj is a pair and the
-;;; car of obj is tag and #f otherwise.
-(define (tagged-list? obj tag)
-  (and (pair? obj)
-       (eq? (car obj) tag)))
+(define (special-form? expr)
+  (and (pair? expr)
+       (get-special-form (car expr))))
 
-(define (return? obj) (tagged-list? obj 'return))
-(define (quote? obj) (tagged-list? obj 'quote))
-(define (begin? obj) (tagged-list? obj 'begin))
-(define (while? obj) (tagged-list? obj 'while))
-(define (block? obj) (tagged-list? obj 'block))
-(define (proc? obj) (tagged-list? obj 'proc))
-(define (var? obj) (tagged-list? obj 'var))
-(define (set? obj) (tagged-list? obj 'set))
-(define (for? obj) (tagged-list? obj 'for))
-(define (inc? obj) (tagged-list? obj 'inc))
-(define (if? obj) (tagged-list? obj 'if))
+(define (quotation? expr)
+  (tagged-list? expr 'quote))
 
 (define (application? expr)
   (pair? expr))
@@ -73,6 +62,12 @@
 (define (self-evaluating? expr)
   (or (immediate? expr)
       (string? expr)))
+
+;;; Return #t if obj is a pair and the
+;;; car of obj is tag and #f otherwise.
+(define (tagged-list? obj tag)
+  (and (pair? obj)
+       (eq? (car obj) tag)))
 
 ;;; Return the immediate representation of obj.
 (define (immediate-rep obj)
@@ -143,6 +138,18 @@
         (cadr pair)
         (error "Not a valid character" char))))
 
+(define *special-forms* '())
+
+(define (put-special-form name proc)
+  (let ((pair (assq name *special-forms*)))
+    (if pair
+        (set-cdr! pair proc)
+        (set! *special-forms*
+              (cons (cons name proc) *special-forms*)))))
+
+(define (get-special-form name)
+  (cdr (assq name *special-forms*)))
+
 ;;; Compile a datum.
 (define (compile-datum obj port)
   (cond ((immediate? obj)
@@ -154,6 +161,10 @@
            (emit port "  movl $~s, %eax" label)))
         (else
          (error "Unknown datum type" obj))))
+
+(put-special-form 'quote
+                  (lambda (exp port env)
+                    (compile-datum (cadr exp) port)))
 
 (define (compile-if expr port env)
   (let ((end-label (unique-label))
@@ -179,6 +190,8 @@
           (compile alt port env)
           (emit port "~s:" end-label)))))
 
+(put-special-form 'if compile-if)
+
 (define (compile-while expr port env)
   (let ((loop-label (unique-label))
         (test (cadr expr))
@@ -200,12 +213,13 @@
               (emit port "  jmp ~s" loop-label)
               (emit port "~s:" end-label))))))
 
+(put-special-form 'while compile-while)
+
 ;;; Return #t if obj is considered falsey
 ;;; by do-it.
 (define (falsey? obj)
   (or (eq? obj #f)
-      (zero? obj)
-      (char=? obj (integer->char 0))))
+      (= obj 0)))
 
 ;;; Return #t if obj is considered truthy
 ;;; by do-it.
@@ -216,14 +230,14 @@
 ;;; evaluate to a falsey value.
 (define (always-falsey? exp)
   (cond ((self-evaluating? exp) (falsey? exp))
-        ((quote? exp) (falsey? (cadr exp)))
+        ((quotation? exp) (falsey? (cadr exp)))
         (else #f)))
 
 ;;; Try to determine if exp will always
 ;;; evaluate to a truthy value.
 (define (always-truthy? exp)
   (cond ((self-evaluating? exp) (truthy? exp))
-        ((quote? exp) (truthy? (cadr exp)))
+        ((quotation? exp) (truthy? (cadr exp)))
         (else #f)))
 
 (define (compile-return expr port env)
@@ -232,10 +246,14 @@
   (emit port "  popl %ebp")
   (emit port "  ret"))
 
+(put-special-form 'return compile-return)
+
 (define (compile-begin expr port env)
   (for-each
    (lambda (x) (compile x port env))
    (cdr expr)))
+
+(put-special-form 'begin compile-begin)
 
 ;;; Compile a procedure application.
 (define (compile-application expr port env)
@@ -299,7 +317,7 @@
 (define (environment-define! env var val)
   (frame-define! (car env) var val))
 
-(define (compile-proc expr port env)
+(define (compile-defproc expr port env)
   (let ((name (mangle (cadr expr)))
         (params (caddr expr))
         (body (cdddr expr))
@@ -327,7 +345,9 @@
     (emit *procedures* "  ret")
     (set! *toplevel* old-toplevel)))
 
-(define (compile-var expr port env)
+(put-special-form 'defproc compile-defproc)
+
+(define (compile-defvar expr port env)
   (if *toplevel*
       ;; Define a global variable
       (let ((label (unique-label)))
@@ -351,15 +371,17 @@
           (number->string (cdar *stack*))
           "(%ebp)")))))
 
+(put-special-form 'defvar compile-defvar)
+
 (define (compile-set expr port env)
   (compile (caddr expr) port env)
   (emit port "  movl %eax, ~s" (environment-lookup env (cadr expr))))
 
-;;; Compile a variable reference.
-(define (compile-variable-ref expr port env)
-  (emit port "  movl ~s, %eax" (environment-lookup env expr)))
+(put-special-form 'set compile-set)
 
-(define (cddddr pair) (cdr (cdddr pair)))
+;;; Compile a variable reference.
+(define (compile-variable expr port env)
+  (emit port "  movl ~s, %eax" (environment-lookup env expr)))
 
 (define (compile-for expr port env)
   (compile
@@ -370,8 +392,12 @@
         ,(cadddr expr)))
    port env))
 
+(put-special-form 'for compile-for)
+
 (define (compile-inc expr port env)
   (compile `(set ,(cadr expr) (+ ,(cadr expr) 1)) port env))
+
+(put-special-form 'inc compile-inc)
 
 (define (compile-block expr port env)
   (let ((old-toplevel *toplevel*))
@@ -382,24 +408,16 @@
     (cleanup port)
     (set! *toplevel* old-toplevel)))
 
+(put-special-form 'block compile-block)
+
 ;;; Compile an expression.
 (define (compile expr port env)
-  (cond ((begin? expr) (compile-begin expr port env))
-        ((while? expr) (compile-while expr port env))
-        ((return? expr) (compile-return expr port env))
-        ((self-evaluating? expr) (compile-datum expr port))
-        ((quote? expr) (compile-datum (cadr expr) port))
-        ((if? expr) (compile-if expr port env))
-        ((proc? expr) (compile-proc expr port env))
-        ((var? expr) (compile-var expr port env))
-        ((set? expr) (compile-set expr port env))
-        ((for? expr) (compile-for expr port env))
-        ((inc? expr) (compile-inc expr port env))
-        ((block? expr) (compile-block expr port env))
-        ((identifier? expr) (compile-variable-ref expr port env))
+  (cond ((self-evaluating? expr) (compile-datum expr port))
+        ((variable? expr) (compile-variable expr port env))
+        ((special-form? expr)
+         ((get-special-form (car expr)) expr port env))
         ((application? expr) (compile-application expr port env))
-        (else
-         (error "Unknown expression type" expr))))
+        (else (error "Unknown expression type" expr))))
 
 ;;; Compile a program.
 (define (compile-program expr port)

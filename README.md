@@ -90,11 +90,11 @@ If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evalu
 #### `(block <body>)`
 `Block` evaluates all the expressions in \<body\> in a new lexical scope. All variables bound with `var` in the \<body\> are local to the block.
 
-#### `(proc <name> (<parameters>) <body>)`
-`Proc` defines a procedure, like LISP's `defun`. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
+#### `(defproc <name> (<parameters>) <body>)`
+`Defproc` defines a procedure, like LISP's `defun`. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
 
-#### `(var <name> <init>)`
-`Var` defines the variable \<name\>, and sets it to \<init\> if it is present.
+#### `(defvar <name> <init>)`
+`Defvar` defines the variable \<name\>, and sets it to \<init\> if it is present.
 
 #### `(set <name> <expression>)`
 `Set` is the assignment operator. It replaces the value of the variable \<name\> with the value of \<expression\>.
@@ -113,7 +113,7 @@ This is the same as
 e.g.
 
 ```scheme
-(for (var i 0) (< i 21) (inc i)
+(for (defvar i 0) (< i 21) (inc i)
   (printf "%d" i)
   (newline))
 ```
@@ -158,7 +158,7 @@ In addition to the primitives provided by do-it, you can call any C procedure fr
 ```
 
 ```scheme
-(proc greet (name)
+(defproc greet (name)
   (printf "Hello, %s!" name)
   (newline))
 
@@ -172,15 +172,15 @@ In addition to the primitives provided by do-it, you can call any C procedure fr
 
 ```scheme
 ;;; Get the nth Fibonacci number
-(proc fib (n)
+(defproc fib (n)
   (if (< n 2)
       n
       (+ (fib (- n 1)) (fib (- n 2)))))
 
-(proc <= (x y)
+(defproc <= (x y)
   (not (> x y)))
 
-(for (var i 0) (<= i 20) (inc i)
+(for (defvar i 0) (<= i 20) (inc i)
   (printf "The %dth Fibonacci number is %d" i (fib i))
   (newline))
 ```
