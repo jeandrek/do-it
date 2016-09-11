@@ -243,7 +243,7 @@
         (else #f)))
 
 (define (compile-return exp port env)
-  (if (pair? (cdr exp))
+  (if (not (null? (cdr exp)))
       (compile (cadr exp) port env))
   (emit port "  popl %ebp")
   (emit port "  ret"))
@@ -284,7 +284,7 @@
   (list (cons '() '())))
 
 ;;; Get the assembly expession pointing to the value
-;;; of the variable var from the environment env.
+;;; of the variable VAR from the environment ENV.
 (define (environment-lookup env var)
   (if (null? env)
       (error "Unbound variable" var)
@@ -297,8 +297,8 @@
                (loop (cdr vars)
                      (cdr vals)))))))
 
-;;; Define the variable var to be the assembly
-;;; expession val in the frame frame.
+;;; Define the variable VAR to be the assembly
+;;; expession VAL in the frame FRAME.
 (define (frame-define! frame var val)
   (let loop ((vars (car frame))
              (vals (cdr frame)))
