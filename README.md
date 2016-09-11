@@ -123,6 +123,33 @@ will print all the integers from 0 to 20 (inclusive).
 #### `(inc <name>)`
 This is the same as `(set <name> (+ <name> 1))`.
 
+## Primitives
+Do-it provides these built-in procedures (primitives):
+
+### Numbers
+
+ * `(< x y)`, `(= x y)`, `(> x y)` &ndash; compare two numbers `x` and `y` and return if `x` is less than `y`, equal to `y` or more than `y`, respectively.
+ * `(+ x y)`, `(- x y)` &ndash; for two numbers `x` and `y`, add them or subtract `y` from `x`, respectively.
+
+### Characters (bytes)
+
+ * `(char=? char1 char2)` &ndash; return if two bytes `char1` and `char2` are equal.
+
+### Booleans
+
+ * `(not obj)` &ndash; return `#t` if obj is false and `#f` otherwise.
+
+### Pointers
+
+ * `(ref ptr)` &ndash; return the value stored at the address `ptr`.
+ * `(set* ptr obj)` &ndash; set the value stored at the address `ptr` to `obj`.
+
+### Input and output
+
+ * `(newline)` &ndash; print a newline to standard out.
+
+In addition to the primitives provided by do-it, you can call any C procedure from do-it (without any header files!).
+
 ## Examples
 ```scheme
 (printf "Hello, world!")
