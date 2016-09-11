@@ -11,7 +11,7 @@ No
 
 ## Limitations
 * No Garbage Collection
-* The compiler can only compile to 64-bit x86 GNU Assembly for x86 &ndash; Sorry people using other platforms!
+* The compiler can only compile to 64-bit x86 GNU Assembly for x86 &ndash; sorry people using other platforms!
 * No types!! (The only type is a machine word.)
 * Unstable and buggy
 * Language not standardized
