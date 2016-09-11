@@ -28,7 +28,7 @@ No
 
 ## Todo
 - [ ] Dynamic typing(?)
-- - [ ] Garbage collection(?)
+- [ ] Garbage collection(?)
 - [ ] Macros(?), make `for` and `inc` macros
 - [x] ~~Global variables~~ (added)
 - [ ] Linking multiple files
