@@ -419,7 +419,7 @@
         ((special-form? exp)
          ((get-special-form (car exp)) exp port env))
         ((application? exp) (compile-application exp port env))
-        (else (error "Unknown expession type" exp))))
+        (else (error "Unknown expression type" exp))))
 
 ;;; Compile a program.
 (define (compile-program exp port)
