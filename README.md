@@ -11,8 +11,7 @@ No
 
 ## Limitations
 * No Garbage Collection
-* The compiler can only compile to 32-bit x86 AT&T Assembly
-  (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
+* The compiler can only compile to 64-bit x86 GNU Assembly &ndash; Sorry people using other platforms!
 * No types!! (The only type is a machine word.)
 * Unstable and buggy
 * Language not standardized
