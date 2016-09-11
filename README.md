@@ -11,8 +11,8 @@ No
 
 ## Limitations
 * No Garbage Collection
-* The compiler can only compile to 32-bit x86 AT&T Assembly
-  (It shouldn't be hard to adapt it to 64-bit, but I just use `gcc`'s `-m32` switch)
+* The compiler can only compile to 32-bit x86 GNU Assembly
+  (I just use GCC's `-m32` switch)
 * No types!! (The only type is a machine word.)
 * Unstable and buggy
 * Language not standardized
@@ -128,27 +128,27 @@ Do-it provides these built-in procedures (primitives):
 
 ### Numbers
 
- * `(< x y)`, `(= x y)`, `(> x y)` &ndash; compare two numbers `x` and `y` and return if `x` is less than `y`, equal to `y` or more than `y`, respectively.
- * `(+ x y)`, `(- x y)` &ndash; for two numbers `x` and `y`, add them or subtract `y` from `x`, respectively.
+* `(< x y)`, `(= x y)`, `(> x y)` &ndash; compare two numbers `x` and `y` and return if `x` is less than `y`, equal to `y` or more than `y`, respectively.
+* `(+ x y)`, `(- x y)` &ndash; for two numbers `x` and `y`, add them or subtract `y` from `x`, respectively.
 
 ### Characters (bytes)
 
- * `(char=? char1 char2)` &ndash; return if two bytes `char1` and `char2` are equal.
+* `(char=? char1 char2)` &ndash; return if two bytes `char1` and `char2` are equal.
 
 ### Booleans
 
- * `(not obj)` &ndash; return `#t` if obj is false and `#f` otherwise.
+* `(not obj)` &ndash; return `#t` if obj is false and `#f` otherwise.
 
 ### Pointers
 
- * `(ref ptr)` &ndash; return the value stored at the address `ptr`.
- * `(set* ptr obj)` &ndash; set the value stored at the address `ptr` to `obj`.
+* `(ref ptr)` &ndash; return the value stored at the address `ptr`.
+* `(set* ptr obj)` &ndash; set the value stored at the address `ptr` to `obj`.
 
 ### Input and output
 
- * `(display string)` &ndash; print the string `string` to standard output.
- * `(display-line string)` &ndash; print the string `string` to standard output followed by a newline.
- * `(newline)` &ndash; print a newline to standard output.
+* `(display string)` &ndash; print the string `string` to standard output.
+* `(display-line string)` &ndash; print the string `string` to standard output followed by a newline.
+* `(newline)` &ndash; print a newline to standard output.
 
 In addition to the primitives provided by do-it, you can call any C procedure from do-it (without any header files!).
 
