@@ -113,8 +113,7 @@
                   '(#\_)
                   (string->list (number->string (char->ascii-code char)))
                   (helper (cdr lst))))))))
-  (list->string
-   (helper (string->list (symbol->string sym)))))
+  (list->string (helper (string->list (symbol->string sym)))))
 
 (define ascii-table
   '((#\newline 10)
