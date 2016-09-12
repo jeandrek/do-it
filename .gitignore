@@ -1,7 +1,0 @@
-# Assembly files
-*.s
-*.S
-# Binaries
-a.out
-# do-it sources
-test.di
