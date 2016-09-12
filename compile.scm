@@ -142,12 +142,17 @@
 
 (define *special-forms* '())
 
-(define (put-special-form name proc)
+(define (put-special-form name compiler)
   (let ((pair (assq name *special-forms*)))
     (if pair
-        (set-cdr! pair proc)
+        (set-cdr! pair compiler)
         (set! *special-forms*
-              (cons (cons name proc) *special-forms*)))))
+              (cons (cons name compiler) *special-forms*)))))
+
+(define (put-derived-form name transformer)
+  (define (compiler exp port env)
+    (compile (transformer exp) port env))
+  (put-special-form name compiler))
 
 (define (get-special-form name)
   (let ((pair (assq name *special-forms*)))
@@ -386,22 +391,6 @@
 (define (compile-variable exp port env)
   (emit port "  movl ~s, %eax" (environment-lookup env exp)))
 
-(define (compile-for exp port env)
-  (compile
-   `(block
-      ,(cadr exp)
-      (while ,(caddr exp)
-        ,@(cddddr exp)
-        ,(cadddr exp)))
-   port env))
-
-(put-special-form 'for compile-for)
-
-(define (compile-inc exp port env)
-  (compile `(set ,(cadr exp) (+ ,(cadr exp) 1)) port env))
-
-(put-special-form 'inc compile-inc)
-
 (define (compile-block exp port env)
   (let ((old-toplevel *toplevel*))
     (set! *stack* (cons (cons 0 (cdar *stack*)) *stack*))
@@ -412,6 +401,22 @@
     (set! *toplevel* old-toplevel)))
 
 (put-special-form 'block compile-block)
+
+;;;; Derived special forms
+
+(define (expand-for exp)
+  `(block
+     ,(cadr exp)
+     (while ,(caddr exp)
+       ,@(cddddr exp)
+       ,(cadddr exp))))
+
+(put-derived-form 'for expand-for)
+
+(define (expand-inc exp)
+  `(set ,(cadr exp) (+ ,(cadr exp) 1)))
+
+(put-derived-form 'inc expand-inc)
 
 ;;; Compile an expession.
 (define (compile exp port env)
