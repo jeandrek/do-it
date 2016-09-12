@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 
 extern void entry(void);
 
