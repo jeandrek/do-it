@@ -93,8 +93,9 @@
   (let ((count 0))
     (lambda (name)
       (set! count (+ count 1))
-      (string-append name
-                     "."
+      (string-append "."
+                     name
+                     "_"
                      (number->string count)))))
 
 ;;; Turn a Scheme symbol into an x86 symbol.
