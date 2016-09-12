@@ -93,6 +93,8 @@ If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evalu
 #### `(defproc <name> (<parameters>) <body>)`
 `Defproc` defines a procedure, like LISP's `defun`. (Like LISP, do-it has seperate namespaces for variables and procedures.) It creates a procedure named \<name\>. When the procedure is called, the \<parameters\> are bound to their respective arguments and the \<body\> is executed as by begin. The parameters and all variables bound by the procedure are local to the procedure.
 
+**Note:** `defproc` is (currently) only for use at the top level. Don't use it inside procedures.
+
 #### `(defvar <name> <init>)`
 `Defvar` defines the variable \<name\>, and sets it to \<init\> if it is present.
 
