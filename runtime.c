@@ -73,15 +73,15 @@ newline(void)
 }
 
 // ref
-int
-ref(int *x)
+uint32_t
+ref(uint32_t *x)
 {
   return *x;
 }
 
 // set*
 void
-set_42(int *x, int y)
+set_42(uint32_t *x, uint32_t y)
 {
   *x = y;
 }
