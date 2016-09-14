@@ -98,14 +98,17 @@ If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evalu
 #### `(defvar <name> <init>)`
 `Defvar` defines the variable \<name\>, and sets it to \<init\> if it is present.
 
-#### `(set <name> <expression>)`
-`Set` is the assignment operator. It replaces the value of the variable \<name\> with the value of \<expression\>.
-
 #### `(procedure <name>)`
 `Procedure` returns the address of the procedure named \<name\>, which can be called with the special form `call`.
 
 #### `(call <procedure pointer> <operands>)`
 `Call` evaluates \<procedure pointer\> and \<operands\>, then applies the procedure the value of \<procedure pointer\> points to to the values of the \<operands\>.
+
+#### `(set <name> <expression>)`
+`Set` is the assignment operator. It replaces the value of the variable \<name\> with the value of \<expression\>.
+
+#### `(inc <name>)`
+This is the same as `(set <name> (+ <name> 1))`.
 
 #### `(for <init> <test> <step> <body>)`
 This is the same as
@@ -127,9 +130,6 @@ e.g.
 ```
 
 will print all the integers from 0 to 20 (inclusive).
-
-#### `(inc <name>)`
-This is the same as `(set <name> (+ <name> 1))`.
 
 ## Primitives
 Do-it provides these built-in procedures (primitives):
