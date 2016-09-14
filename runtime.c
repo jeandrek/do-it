@@ -5,15 +5,15 @@
 extern void entry(void);
 
 // <
-int
-_60(int x, int y)
+uint32_t
+_60(uint32_t x, uint32_t y)
 {
   return x < y;
 }
 
 // =
-int
-_61(int x, int y)
+uint32_t
+_61(uint32_t x, uint32_t y)
 {
   return x == y;
 }
@@ -26,22 +26,22 @@ char_61_63(char x, char y)
 }
 
 // >
-int
-_62(int x, int y)
+uint32_t
+_62(uint32_t x, uint32_t y)
 {
   return x > y;
 }
 
 // +
-int
-_43(int x, int y)
+uint32_t
+_43(uint32_t x, uint32_t y)
 {
   return x + y;
 }
 
 // -
-int
-_(int x, int y)
+uint32_t
+_(uint32_t x, uint32_t y)
 {
   return x - y;
 }
