@@ -50,15 +50,11 @@
 
 (define (variable? exp) (symbol? exp))
 
-;;; Return #T if OBJ is an immediate
-;;; object and #F otherwise.
 (define (immediate? obj)
   (or (integer? obj)
       (boolean? obj)
       (char? obj)))
 
-;;; Return #T if EXP is a self-evaluating
-;;; expession and #F otherwise.
 (define (self-evaluating? exp)
   (or (immediate? exp)
       (string? exp)))
@@ -265,16 +261,22 @@
 
 ;;; Compile a procedure application.
 (define (compile-application exp port env)
-  (for-each
-   (lambda (x)
-     (compile x port env)
-     (emit port "  pushl %eax"))
-   (reverse (cdr exp)))
+  (push-args (cdr exp) port env)
   (emit port "  call ~s" (mangle (car exp)))
+  (pop-args (cdr exp) port))
+
+(define (push-args operands port env)
   (for-each
-   (lambda (x)
+   (lambda (operand)
+     (compile operand port env)
+     (emit port "  pushl %eax"))
+   (reverse operands)))
+
+(define (pop-args operands port)
+  (for-each
+   (lambda (operand)
      (emit port "  addl $~n, %esp" wordsize))
-   (cdr exp)))
+   operands))
 
 ;;; Emit code to pop variables off the stack at the end
 ;;; of a procedure or block.
@@ -401,6 +403,19 @@
     (set! *toplevel* old-toplevel)))
 
 (put-special-form 'block compile-block)
+
+(define (compile-procedure exp port env)
+  (emit port "  movl $~s, %eax" (mangle (cadr exp))))
+
+(put-special-form 'procedure compile-procedure)
+
+(define (compile-call exp port env)
+  (push-args (cddr exp) port env)
+  (compile (cadr exp) port env)
+  (emit port "  call *%eax")
+  (pop-args (cddr exp) port))
+
+(put-special-form 'call compile-call)
 
 ;;;; Derived special forms
 

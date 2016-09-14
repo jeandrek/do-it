@@ -64,7 +64,7 @@ A self-evaluating expression is a constant. Currently the only self-evaluating e
 A variable reference is simply a symbol (identifier) that is the name of the variable to be referenced.
 
 ### Procedure applications
-A procedure application takes the form `(<procedure name> <arguments>)`. \<procedure name\> is always symbol that is the name of a procedure. (Like LISP, do-it has seperate namespaces for variables and procedures.) The \<arguments\> can be any type of expression, and they are passed as arguments to the procedure.
+A procedure application takes the form `(<operator> <operands>)`. \<operator\> is always symbol that is the name of a procedure. (Like LISP, do-it has seperate namespaces for variables and procedures.) The \<operands\> can be any type of expression, and their values are passed as arguments to the procedure.
 
 Do-it is call-by-value, so all the arguments are evaluated, then pushed onto the stack, and then the procedure is called.
 
@@ -100,6 +100,12 @@ If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evalu
 
 #### `(set <name> <expression>)`
 `Set` is the assignment operator. It replaces the value of the variable \<name\> with the value of \<expression\>.
+
+#### `(procedure <name>)`
+`Procedure` returns the address of the procedure named \<name\>, which can be called with the special form `call`.
+
+#### `(call <procedure pointer> <operands>)`
+`Call` evaluates \<procedure pointer\> and \<operands\>, then applies the procedure the value of \<procedure pointer\> points to to the values of the \<operands\>.
 
 #### `(for <init> <test> <step> <body>)`
 This is the same as
@@ -182,7 +188,7 @@ In addition to the primitives provided by do-it, you can call any C procedure fr
 (defproc <= (x y)
   (not (> x y)))
 
-(for (defvar i 0) (<= i 20) (inc i)
+(for (defvar i 1) (<= i 20) (inc i)
   (printf "The %dth Fibonacci number is %d" i (fib i))
   (newline))
 ```
