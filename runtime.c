@@ -46,6 +46,20 @@ _(uint32_t x, uint32_t y)
   return x - y;
 }
 
+// *
+uint32_t
+_42(uint32_t x, uint32_t y)
+{
+  return x * y;
+}
+
+// /
+uint32_t
+_47(uint32_t x, uint32_t y)
+{
+  return x / y;
+}
+
 // not
 int
 not(int x)
