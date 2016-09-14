@@ -95,14 +95,14 @@ If \<test\> evaluates to #f or zero, then if \<alternative\> present it is evalu
 
 **Note:** `defproc` is (currently) only for use at the top level. Don't use it inside procedures.
 
-#### `(defvar <name> <init>)`
-`Defvar` defines the variable \<name\>, and sets it to \<init\> if it is present.
-
 #### `(procedure <name>)`
 `Procedure` returns the address of the procedure named \<name\>, which can be called with the special form `call`.
 
 #### `(call <procedure pointer> <operands>)`
 `Call` evaluates \<procedure pointer\> and \<operands\>, then applies the procedure the value of \<procedure pointer\> points to to the values of the \<operands\>.
+
+#### `(defvar <name> <init>)`
+`Defvar` defines the variable \<name\>, and sets it to \<init\> if it is present.
 
 #### `(set <name> <expression>)`
 `Set` is the assignment operator. It replaces the value of the variable \<name\> with the value of \<expression\>.
