@@ -104,7 +104,7 @@
                  (cons #\_ (helper (cdr lst))))
                 ((or (char-alphabetic? char)
                      (char-numeric? char))
-                 (cons char (helper (cdr lst))))
+                 (cons (char-downcase char) (helper (cdr lst))))
                 (else
                  (append
                   '(#\_)
