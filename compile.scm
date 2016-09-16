@@ -332,18 +332,25 @@
 (define (environment-define! env var val)
   (frame-define! (car env) var val))
 
+(define *procedure-labels* '())
+
 (define (compile-defproc exp port env)
-  (let ((name (mangle (cadr exp)))
+  (let ((label (procedure-name->label (cadr exp)))
         (params (caddr exp))
         (body (cdddr exp))
         (new-env (cons (cons '() '()) env))
-        (old-toplevel *toplevel*))
-    (emit *procedures* "  .globl ~s" name)
-    (emit *procedures* "~s:" name)
-    (emit *procedures* "  pushl %ebp")
-    (emit *procedures* "  movl %esp, %ebp")
+        (old-toplevel *toplevel*)
+        (old-procedure-labels *procedure-labels*)
+        (old-procedures *procedures*))
+    (if *toplevel*
+        (emit *procedures* "  .globl ~s" label))
+    (emit old-procedures "~s:" label)
+    (emit old-procedures "  pushl %ebp")
+    (emit old-procedures "  movl %esp, %ebp")
     (set! *stack* (cons (cons 0 0) *stack*))
     (set! *toplevel* #f)
+    (set! *procedure-labels* '())
+    (set! *procedures* (open-output-string))
     ;; Bind parameters to arguments.
     (let loop ((i (* wordsize 2))
                (params params))
@@ -353,14 +360,26 @@
              (string-append (number->string i) "(%ebp)"))
             (loop (+ i wordsize) (cdr params)))))
     ;; Compile the procedure body.
-    (compile `(begin ,@body) *procedures* new-env)
+    (compile `(begin ,@body) old-procedures new-env)
     ;; Emit cleanup code.
-    (cleanup *procedures*)
-    (emit *procedures* "  popl %ebp")
-    (emit *procedures* "  ret")
+    (cleanup old-procedures)
+    (emit old-procedures "  popl %ebp")
+    (emit old-procedures "  ret")
+    (set! *procedures* old-procedures)
+    (set! *procedure-labels* old-procedure-labels)
     (set! *toplevel* old-toplevel)))
 
 (put-special-form 'defproc compile-defproc)
+
+(define (procedure-name->label name)
+  (cond (*toplevel* (mangle name))
+        ((assq name *procedure-labels*) => cdr)
+        (else
+         (let ((label
+                (make-label (string-append "localproc_" (mangle name)))))
+           (set! *procedure-labels*
+                 (cons (cons name label) *procedure-labels*))
+           label))))
 
 (define (compile-defvar exp port env)
   (if (not (variable? (cadr exp)))
