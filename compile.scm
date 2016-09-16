@@ -40,7 +40,7 @@
 
 (define (special-form? exp)
   (and (pair? exp)
-       (get-special-form (car exp))))
+       (keyword? (car exp))))
 
 (define (quotation? exp)
   (tagged-list? exp 'quote))
@@ -48,7 +48,9 @@
 (define (application? exp)
   (pair? exp))
 
-(define (variable? exp) (symbol? exp))
+(define (variable? exp)
+  (and (symbol? exp)
+       (not (keyword? exp))))
 
 (define (immediate? obj)
   (or (integer? obj)
@@ -58,6 +60,9 @@
 (define (self-evaluating? exp)
   (or (immediate? exp)
       (string? exp)))
+
+(define (keyword? obj)
+  (get-special-form obj))
 
 ;;; Return #T if OBJ is a pair and the
 ;;; CAR of OBJ is TAG and #F otherwise.
@@ -358,6 +363,8 @@
 (put-special-form 'defproc compile-defproc)
 
 (define (compile-defvar exp port env)
+  (if (not (variable? (cadr exp)))
+      (error "Not a variable in DEFVAR:" (cadr exp)))
   (if *toplevel*
       ;; Define a global variable
       (let ((label (make-label "variable")))
@@ -440,7 +447,7 @@
         ((special-form? exp)
          ((get-special-form (car exp)) exp port env))
         ((application? exp) (compile-application exp port env))
-        (else (error "Unknown expression type" exp))))
+        (else (error "Unknown expression type:" exp))))
 
 ;;; Compile a program.
 (define (compile-program exp port)
