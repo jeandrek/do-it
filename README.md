@@ -6,7 +6,7 @@ Do-it is a toy procedural imperative (although everything is an expression for s
 ## Why?
 Because I want to learn about code generation.
 
-### Should I use do-it to write programs?
+### Should I use do-it to write programs/learn to program?
 No
 
 ## Limitations
