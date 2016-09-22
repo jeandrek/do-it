@@ -13,7 +13,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with do-it.  If not, see <http://www.gnu.org/licenses/>.
 
-(define wordsize 4)
+(define word-size 4)
 
 ;;; Common Lisp FORMAT-style output.
 (define (emit port fmt . args)
@@ -143,6 +143,10 @@
 
 (define *special-forms* '())
 
+(define (get-special-form name)
+  (let ((pair (assq name *special-forms*)))
+    (and pair (cdr pair))))
+
 (define (put-special-form name compiler)
   (let ((pair (assq name *special-forms*)))
     (if pair
@@ -154,10 +158,6 @@
   (define (compiler exp port env)
     (compile (transformer exp) port env))
   (put-special-form name compiler))
-
-(define (get-special-form name)
-  (let ((pair (assq name *special-forms*)))
-    (and pair (cdr pair))))
 
 ;;; Compile a datum.
 (define (compile-datum obj port)
@@ -280,7 +280,7 @@
 (define (pop-args operands port)
   (for-each
    (lambda (operand)
-     (emit port "  addl $~n, %esp" wordsize))
+     (emit port "  addl $~n, %esp" word-size))
    operands))
 
 ;;; Emit code to pop variables off the stack at the end
@@ -289,7 +289,7 @@
   (let loop ((i (caar *stack*)))
     (if (> i 0)
         (begin
-          (emit port "  addl $~n, %esp" wordsize)
+          (emit port "  addl $~n, %esp" word-size)
           (loop (- i 1)))))
   (set! *stack* (cdr *stack*)))
 
@@ -345,13 +345,13 @@
     (set! *stack* (cons (cons 0 0) *stack*))
     (set! *toplevel* #f)
     ;; Bind parameters to arguments.
-    (let loop ((i (* wordsize 2))
+    (let loop ((i (* word-size 2))
                (params params))
       (if (not (null? params))
           (begin
             (environment-define! new-env (car params)
              (string-append (number->string i) "(%ebp)"))
-            (loop (+ i wordsize) (cdr params)))))
+            (loop (+ i word-size) (cdr params)))))
     ;; Compile the procedure body.
     (compile `(begin ,@body) *procedures* new-env)
     ;; Emit cleanup code.
@@ -369,7 +369,7 @@
       ;; Define a global variable
       (let ((label (make-label "variable")))
         (emit *data* "~s:" label)
-        (emit *data* "  .fill 1, ~n, 0" wordsize)
+        (emit *data* "  .fill 1, ~n, 0" word-size)
         (if (pair? (cddr exp))
             (begin
               (compile (caddr exp) port env)
@@ -382,7 +382,7 @@
         (emit port "  pushl %eax")
         (set-car! *stack*
          (cons (+ (caar *stack*) 1)
-               (- (cdar *stack*) wordsize)))
+               (- (cdar *stack*) word-size)))
         (environment-define! env (cadr exp)
          (string-append
           (number->string (cdar *stack*))
@@ -424,29 +424,13 @@
 
 (put-special-form 'call compile-call)
 
-;;;; Derived special forms
-
-(define (expand-for exp)
-  `(block
-     ,(cadr exp)
-     (while ,(caddr exp)
-       ,@(cddddr exp)
-       ,(cadddr exp))))
-
-(put-derived-form 'for expand-for)
-
-(define (expand-inc exp)
-  `(set ,(cadr exp) (+ ,(cadr exp) 1)))
-
-(put-derived-form 'inc expand-inc)
-
-(define (compile-defmacro exp)
+(define (compile-defmacro exp env port)
   (if (not (symbol? (cadr exp)))
       (error "Not an identifier in DEFMACRO:" (cadr exp)))
   (let ((lambda-exp
          `(lambda (exp)
             (apply (lambda ,(caddr exp)
-                     ,@(cddr exp))
+                     ,@(cdddr exp))
                    (cdr exp)))))
     (put-derived-form (cadr exp)
                       (eval lambda-exp (scheme-report-environment 5)))))
