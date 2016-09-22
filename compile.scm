@@ -440,7 +440,20 @@
 
 (put-derived-form 'inc expand-inc)
 
-;;; Compile an expession.
+(define (compile-defmacro exp)
+  (if (not (symbol? (cadr exp)))
+      (error "Not an identifier in DEFMACRO:" (cadr exp)))
+  (let ((lambda-exp
+         `(lambda (exp)
+            (apply (lambda ,(caddr exp)
+                     ,@(cddr exp))
+                   (cdr exp)))))
+    (put-derived-form (cadr exp)
+                      (eval lambda-exp (scheme-report-environment 5)))))
+
+(put-special-form 'defmacro compile-defmacro)
+
+;;; Compile an expression.
 (define (compile exp port env)
   (cond ((self-evaluating? exp) (compile-datum exp port))
         ((variable? exp) (compile-variable exp port env))
