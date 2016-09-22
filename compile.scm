@@ -474,6 +474,9 @@
   (emit port "entry:")
   (emit port "  pushl %ebp")
   (emit port "  movl %esp, %ebp")
+  (call-with-input-file "library.di"
+    (lambda (library)
+      (compile (read-file-in-begin library) port)))
   (compile exp port (empty-environment))
   (cleanup port)
   (emit port "  popl %ebp")
@@ -487,10 +490,15 @@
 ;;; Read a program from the port INPUT and
 ;;; compile it to the port OUTPUT.
 (define (compile-file input output)
+  (compile-program (read-file-in-begin input)
+                   output))
+
+(define (read-file-in-begin port)
   (let loop ((accum '(begin)))
     (let ((exp (read input)))
       (if (eof-object? exp)
-          (compile-program (reverse accum) output)
+          (reverse accum)
           (loop (cons exp accum))))))
 
-(compile-file (current-input-port) (current-output-port))
+(compile-file (current-input-port)
+              (current-output-port))
