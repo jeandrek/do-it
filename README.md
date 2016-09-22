@@ -1,7 +1,7 @@
 # do-it
-Do-it is a toy procedural imperative (although everything is an expression for simplicity) programming language I'm writing to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme.
+Do-it is a _messy_ toy procedural imperative (although everything is an expression for simplicity) programming language I'm writing to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme.
 
-**Warning: perhaps messy code!** Suggestions are very welcome.
+**Warning: messy code!** Suggestions are very welcome.
 
 ## Why?
 Because I want to learn about code generation.
