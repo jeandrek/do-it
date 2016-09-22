@@ -476,7 +476,9 @@
   (emit port "  movl %esp, %ebp")
   (call-with-input-file "library.di"
     (lambda (library)
-      (compile (read-file-in-begin library) port)))
+      (compile (read-file-in-begin library)
+               port
+               (empty-environment))))
   (compile exp port (empty-environment))
   (cleanup port)
   (emit port "  popl %ebp")
@@ -495,7 +497,7 @@
 
 (define (read-file-in-begin port)
   (let loop ((accum '(begin)))
-    (let ((exp (read input)))
+    (let ((exp (read port)))
       (if (eof-object? exp)
           (reverse accum)
           (loop (cons exp accum))))))
