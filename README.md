@@ -71,9 +71,6 @@ Do-it is documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
       n
       (+ (fib (- n 1)) (fib (- n 2)))))
 
-(defproc <= (x y)
-  (not (> x y)))
-
 (for (defvar i 1) (<= i 20) (inc i)
   (printf "The %dth Fibonacci number is %d" i (fib i))
   (newline))

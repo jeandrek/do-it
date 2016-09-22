@@ -9,3 +9,9 @@
      (while ,test
        ,@body
        ,step)))
+
+(defproc <= (x y)
+  (not (> x y)))
+
+(defproc >= (x y)
+  (not (< x y)))
