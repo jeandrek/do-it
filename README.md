@@ -25,12 +25,13 @@ No
 * Conditionals (`if` is ternary)
 * Last expression in a procedure is automatically returned &ndash; it would take pointless effort to *not* do that!
 * Super easy to interface with C
+* Macros, written in Scheme
 
 ## Todo
 - [ ] Dynamic typing(?)
 - [ ] Garbage collection(?)
-- [ ] Macros(?), make `for` and `inc` macros
-- [x] ~~Global variables~~ (added)
+- [x] ~~Macros(?), make `for` and `inc` macros~~
+- [x] ~~Global variables~~
 - [ ] Linking multiple files
 - [ ] Abstract syntax(?)
 
