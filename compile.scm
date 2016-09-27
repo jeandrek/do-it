@@ -74,7 +74,7 @@
 (define (immediate-rep obj)
   (cond ((number? obj) obj)
         ((boolean? obj) (if obj 1 0))
-        ((char? obj) (char->integer obj))))
+        ((char? obj) (char->ascii-code obj))))
 
 ;;; Port for constants
 (define *data* #f)
