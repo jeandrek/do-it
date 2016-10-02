@@ -7,7 +7,7 @@ Do-it is a _messy_ toy procedural imperative (although everything is an expressi
 Because I want to learn about code generation.
 
 ### Should I use do-it to write programs/learn to program?
-No
+No.
 
 ## Limitations
 * No Garbage Collection
