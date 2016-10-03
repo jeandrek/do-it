@@ -135,9 +135,9 @@
     (#\| 124) (#\} 135) (#\~ 136)))
 
 (define (char->ascii-code char)
-  (let ((pair (assv char ascii-table)))
-    (if pair
-        (cadr pair)
+  (let ((code (assv char ascii-table)))
+    (if code
+        (cadr code)
         (error "Not a valid character" char))))
 
 (define *special-forms* '())
@@ -344,13 +344,26 @@
     (set! *stack* (cons (cons 0 0) *stack*))
     (set! *toplevel* #f)
     ;; Bind parameters to arguments.
-    (let loop ((i (* word-size 2))
+    (let loop ((stack-index (* word-size 2))
                (params params))
-      (if (not (null? params))
-          (begin
-            (environment-define! new-env (car params)
-             (string-append (number->string i) "(%ebp)"))
-            (loop (+ i word-size) (cdr params)))))
+      (cond ((null? params))
+            ((pair? params)
+             (environment-define!
+              new-env (car params)
+              (string-append (number->string stack-index) "(%ebp)"))
+             (loop (+ stack-index word-size) (cdr params)))
+            (else
+             ;; Bind argument list
+             (emit *procedures* "  pushl $~n(%ebp)" stack-index)
+             (set-car! *stack*
+                       (cons (+ (caar *stack*) 1)
+                             (- (cdar *stack*) word-size)))
+             
+             (environment-define!
+              new-env params
+              (string-append
+               (number->string (cdar *stack*))
+               "(%ebp)")))))
     ;; Compile the procedure body.
     (compile `(begin ,@body) *procedures* new-env)
     ;; Emit cleanup code.
@@ -363,10 +376,10 @@
 
 (define (compile-defvar exp port env)
   (if (not (variable? (cadr exp)))
-      (error "Not a variable in DEFVAR:" (cadr exp)))
+      (error "Not a variable in DEFVAR:" exp))
   (if *toplevel*
       ;; Define a global variable
-      (let ((label (make-label "variable")))
+      (let ((label (string-append "global_" (mangle (cadr exp)))))
         (emit *data* "~s:" label)
         (emit *data* "  .fill 1, ~n, 0" word-size)
         (if (pair? (cddr exp))
@@ -380,9 +393,10 @@
             (compile (caddr exp) port env))
         (emit port "  pushl %eax")
         (set-car! *stack*
-         (cons (+ (caar *stack*) 1)
-               (- (cdar *stack*) word-size)))
-        (environment-define! env (cadr exp)
+                  (cons (+ (caar *stack*) 1)
+                        (- (cdar *stack*) word-size)))
+        (environment-define!
+         env (cadr exp)
          (string-append
           (number->string (cdar *stack*))
           "(%ebp)")))))
