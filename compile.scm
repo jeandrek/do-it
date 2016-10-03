@@ -457,7 +457,7 @@
   (emit port "entry:")
   (emit port "  pushl %ebp")
   (emit port "  movl %esp, %ebp")
-  (call-with-input-file "library.di"
+  (call-with-input-file "library.do-it"
     (lambda (library)
       (compile (read-file-in-begin library)
                port
