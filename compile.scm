@@ -354,11 +354,11 @@
              (loop (+ stack-index word-size) (cdr params)))
             (else
              ;; Bind argument list
-             (emit *procedures* "  pushl %ebp")
+             (emit *procedures* "  leal ~n(%ebp), %eax" stack-index)
+             (emit *procedures* "  pushl %eax")
              (set-car! *stack*
                        (cons (+ (caar *stack*) 1)
                              (- (cdar *stack*) word-size)))
-             (emit *procedures* "  addl $~n, ~n(%ebp)" stack-index (cdar *stack*))
              (environment-define!
               new-env params
               (string-append
