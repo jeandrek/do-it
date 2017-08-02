@@ -80,13 +80,6 @@ display(char *str)
   fputs(str, stdout);
 }
 
-// newline
-void
-newline(void)
-{
-  putchar('\n');
-}
-
 // peek
 uint32_t
 peek(uint32_t *x)

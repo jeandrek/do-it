@@ -19,3 +19,6 @@
 (defproc display-line (str)
   (display str)
   (newline))
+
+(defproc newline ()
+  (putchar 10))
