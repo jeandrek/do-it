@@ -87,16 +87,16 @@ newline(void)
   putchar('\n');
 }
 
-// ref
+// peek
 uint32_t
-ref(uint32_t *x)
+peek(uint32_t *x)
 {
   return *x;
 }
 
-// set*
+// poke
 void
-set_42(uint32_t *x, uint32_t y)
+poke(uint32_t *x, uint32_t y)
 {
   *x = y;
 }

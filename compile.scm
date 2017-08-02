@@ -13,6 +13,9 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with do-it.  If not, see <http://www.gnu.org/licenses/>.
 
+;;; Guile needs this for some reason
+(use-modules (ice-9 r5rs))
+
 (define word-size 4)
 
 ;;; Common Lisp FORMAT-style output.
@@ -161,12 +164,12 @@
 ;;; Compile a datum.
 (define (compile-datum obj port)
   (cond ((immediate? obj)
-         (emit port "  movl $~n, %eax" (immediate-rep obj)))
+         (emit port "	movl $~n, %eax" (immediate-rep obj)))
         ((string? obj)
          (let ((label (make-label "string")))
            (emit *data* "~s:" label)
-           (emit *data* "  .asciz ~v" obj)
-           (emit port "  movl $~s, %eax" label)))
+           (emit *data* "	.asciz ~v" obj)
+           (emit port "	movl $~s, %eax" label)))
         (else
          (error "Unknown datum type" obj))))
 
@@ -182,18 +185,18 @@
         ;; No alternative
         (begin
           (compile test port env)
-          (emit port "  cmpl $0, %eax")
-          (emit port "  je ~s" end-label)
+          (emit port "	cmpl $0, %eax")
+          (emit port "	je ~s" end-label)
           (compile conseq port env)
           (emit port "~s:" end-label))
         ;; Alternative
         (let ((alt-label (make-label "if_alt"))
               (alt (cadddr exp)))
           (compile test port env)
-          (emit port "  cmpl $0, %eax")
-          (emit port "  je ~s" alt-label)
+          (emit port "	cmpl $0, %eax")
+          (emit port "	je ~s" alt-label)
           (compile conseq port env)
-          (emit port "  jmp ~s" end-label)
+          (emit port "	jmp ~s" end-label)
           (emit port "~s:" alt-label)
           (compile alt port env)
           (emit port "~s:" end-label)))))
@@ -210,15 +213,15 @@
             (begin
               (emit port "~s:" loop-label)
               (compile `(begin ,@body) port env)
-              (emit port "  jmp ~s" loop-label))
+              (emit port "	jmp ~s" loop-label))
             ;; Unknown loop length
             (let ((end-label (make-label "while_end")))
               (emit port "~s:" loop-label)
               (compile test port env)
-              (emit port "  cmpl $0, %eax")
-              (emit port "  je ~s" end-label)
+              (emit port "	cmpl $0, %eax")
+              (emit port "	je ~s" end-label)
               (compile `(begin ,@body) port env)
-              (emit port "  jmp ~s" loop-label)
+              (emit port "	jmp ~s" loop-label)
               (emit port "~s:" end-label))))))
 
 (put-special-form 'while compile-while)
@@ -251,8 +254,8 @@
 (define (compile-return exp port env)
   (if (not (null? (cdr exp)))
       (compile (cadr exp) port env))
-  (emit port "  popl %ebp")
-  (emit port "  ret"))
+  (emit port "	popl %ebp")
+  (emit port "	ret"))
 
 (put-special-form 'return compile-return)
 
@@ -266,20 +269,20 @@
 ;;; Compile a procedure application.
 (define (compile-application exp port env)
   (push-args (cdr exp) port env)
-  (emit port "  call ~s" (mangle (car exp)))
+  (emit port "	call ~s" (mangle (car exp)))
   (pop-args (cdr exp) port))
 
 (define (push-args operands port env)
   (for-each
    (lambda (operand)
      (compile operand port env)
-     (emit port "  pushl %eax"))
+     (emit port "	pushl %eax"))
    (reverse operands)))
 
 (define (pop-args operands port)
   (for-each
    (lambda (operand)
-     (emit port "  addl $~n, %esp" word-size))
+     (emit port "	addl $~n, %esp" word-size))
    operands))
 
 ;;; Emit code to pop variables off the stack at the end
@@ -288,7 +291,7 @@
   (let loop ((i (caar *stack*)))
     (if (> i 0)
         (begin
-          (emit port "  addl $~n, %esp" word-size)
+          (emit port "	addl $~n, %esp" word-size)
           (loop (- i 1)))))
   (set! *stack* (cdr *stack*)))
 
@@ -337,10 +340,10 @@
         (body (cdddr exp))
         (new-env (cons (cons '() '()) env))
         (old-toplevel *toplevel*))
-    (emit *procedures* "  .globl ~s" name)
+    (emit *procedures* "	.globl ~s" name)
     (emit *procedures* "~s:" name)
-    (emit *procedures* "  pushl %ebp")
-    (emit *procedures* "  movl %esp, %ebp")
+    (emit *procedures* "	pushl %ebp")
+    (emit *procedures* "	movl %esp, %ebp")
     (set! *stack* (cons (cons 0 0) *stack*))
     (set! *toplevel* #f)
     ;; Bind parameters to arguments.
@@ -355,8 +358,8 @@
     (compile `(begin ,@body) *procedures* new-env)
     ;; Emit cleanup code.
     (cleanup *procedures*)
-    (emit *procedures* "  popl %ebp")
-    (emit *procedures* "  ret")
+    (emit *procedures* "	popl %ebp")
+    (emit *procedures* "	ret")
     (set! *toplevel* old-toplevel)))
 
 (put-special-form 'defproc compile-defproc)
@@ -368,17 +371,17 @@
       ;; Define a global variable
       (let ((label (make-label "variable")))
         (emit *data* "~s:" label)
-        (emit *data* "  .fill 1, ~n, 0" word-size)
+        (emit *data* "	.fill 1, ~n, 0" word-size)
         (if (pair? (cddr exp))
             (begin
               (compile (caddr exp) port env)
-              (emit port "  movl %eax, ~s" label)))
+              (emit port "	movl %eax, ~s" label)))
         (environment-define! env (cadr exp) label))
       ;; Define a local variable
       (begin
         (if (pair? (cddr exp))
             (compile (caddr exp) port env))
-        (emit port "  pushl %eax")
+        (emit port "	pushl %eax")
         (set-car! *stack*
          (cons (+ (caar *stack*) 1)
                (- (cdar *stack*) word-size)))
@@ -391,13 +394,13 @@
 
 (define (compile-set exp port env)
   (compile (caddr exp) port env)
-  (emit port "  movl %eax, ~s" (environment-lookup env (cadr exp))))
+  (emit port "	movl %eax, ~s" (environment-lookup env (cadr exp))))
 
 (put-special-form 'set compile-set)
 
 ;;; Compile a variable reference.
 (define (compile-variable exp port env)
-  (emit port "  movl ~s, %eax" (environment-lookup env exp)))
+  (emit port "	movl ~s, %eax" (environment-lookup env exp)))
 
 (define (compile-block exp port env)
   (let ((old-toplevel *toplevel*))
@@ -411,14 +414,14 @@
 (put-special-form 'block compile-block)
 
 (define (compile-procedure exp port env)
-  (emit port "  movl $~s, %eax" (mangle (cadr exp))))
+  (emit port "	movl $~s, %eax" (mangle (cadr exp))))
 
 (put-special-form 'procedure compile-procedure)
 
 (define (compile-call exp port env)
   (push-args (cddr exp) port env)
   (compile (cadr exp) port env)
-  (emit port "  call *%eax")
+  (emit port "	call *%eax")
   (pop-args (cddr exp) port))
 
 (put-special-form 'call compile-call)
@@ -452,11 +455,11 @@
   (set! *procedures* (open-output-string))
   (set! *stack* (list (cons 0 0)))
   (set! *toplevel* #t)
-  (emit port "  .text")
-  (emit port "  .globl entry")
+  (emit port "	.text")
+  (emit port "	.globl entry")
   (emit port "entry:")
-  (emit port "  pushl %ebp")
-  (emit port "  movl %esp, %ebp")
+  (emit port "	pushl %ebp")
+  (emit port "	movl %esp, %ebp")
   (call-with-input-file "library.do-it"
     (lambda (library)
       (compile (read-file-in-begin library)
@@ -464,12 +467,12 @@
                (empty-environment))))
   (compile exp port (empty-environment))
   (cleanup port)
-  (emit port "  popl %ebp")
-  (emit port "  ret")
+  (emit port "	popl %ebp")
+  (emit port "	ret")
   ;; Emit procedures.
   (display (get-output-string *procedures*) port)
   ;; Emit data.
-  (emit port "  .data")
+  (emit port "	.data")
   (display (get-output-string *data*) port))
 
 ;;; Read a program from the port INPUT and
@@ -485,5 +488,4 @@
           (reverse accum)
           (loop (cons exp accum))))))
 
-(compile-file (current-input-port)
-              (current-output-port))
+(compile-file (current-input-port) (current-output-port))
