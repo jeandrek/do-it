@@ -17,6 +17,7 @@ No.
 * Unstable and buggy
 * Language not standardized
 * Imperative programs can get bugs that declarative programs are immune to
+* Works on GNU/Linux, fails on macOS. Untested on *BSD or Solaris.
 
 ## Features
 * Lexically scoped local variables (allocated on the stack) and assignment
