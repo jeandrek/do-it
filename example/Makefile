@@ -1,4 +1,4 @@
-EXAMPLES=	fibonacci greet hello pair-1 pair-2
+EXAMPLES=	01-hello 02-greet 03-fibonacci 04-pair1 05-pair2 06-map
 SCHEME=		guile
 CFLAGS=		-m32 -Wall -O
 
@@ -9,8 +9,9 @@ all: $(EXAMPLES)
 .do-it:
 	(cd .. && $(SCHEME) compile.scm < example/$< > example/$@.s)
 	$(CC) $(CFLAGS) -o $@ $@.s ../runtime.c
+	rm -f $@.s
 
 .PHONY: clean
 
 clean:
-	rm -f $(EXAMPLES) *.s *.o
+	rm -f $(EXAMPLES) *.s

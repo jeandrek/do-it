@@ -1,7 +1,7 @@
-fibonacci
-greet
-hello
-pair-1
-pair-2
+01-hello
+02-greet
+03-fibonacci
+04-pair1
+05-pair2
+06-map
 *.s
-*.o
