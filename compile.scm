@@ -294,10 +294,8 @@
    (reverse operands)))
 
 (define (pop-args operands port)
-  (for-each
-   (lambda (operand)
-     (emit port "	addl	$~n, %esp" word-size))
-   operands))
+  (if (not (null? operands))
+      (emit port "	addl	$~n, %esp" (* word-size (length operands)))))
 
 ;;; Emit code to pop variables off the stack at the end
 ;;; of a procedure or block.
@@ -315,11 +313,9 @@
 	  (loop (cdr stack))))))
 
 (define (cleanup-block block port)
-  (let loop ((i (car block)))
+  (let ((i (car block)))
     (if (> i 0)
-        (begin
-          (emit port "	addl	$~n, %esp" word-size)
-          (loop (- i 1))))))
+	(emit port "	addl	$~n, %esp" (* word-size i)))))
 
 (define (empty-environment)
   (list (cons '() '())))
