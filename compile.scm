@@ -18,7 +18,7 @@
 
 ;;; Platform-dependant parameters
 (define word-size 4)
-(define abi-underscore? #t)
+(define abi-underscore? #f)
 
 (define entry-point
   (if abi-underscore?
