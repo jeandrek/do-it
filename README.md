@@ -38,10 +38,9 @@ No.
 ## Usage
 Something like
 ```sh
-guile compile.scm < in.di > out.s
-cc runtime.c out.s -o out
+guile compile.scm <test.do-it >test.s
+cc -m32 -o test test.s runtime.c
 ```
-(It should work with any R<sup>5</sup>RS-conforming Scheme implementation with SRFI 6, please make an issue if it does not)
 
 ## Documentation
 Do-it is documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
