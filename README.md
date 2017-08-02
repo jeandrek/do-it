@@ -17,7 +17,11 @@ No.
 * Unstable and buggy
 * Language not standardized
 * Imperative programs can get bugs that declarative programs are immune to
-* Works on GNU/Linux, fails on macOS. Untested on *BSD or Solaris.
+
+## Operating system support
+* Do-it works on GNU/Linux and OpenBSD
+* Do-it fails on Apple macOS
+* Do-it has not been tested on MS Windows, Oracle Solaris or others
 
 ## Features
 * Lexically scoped local variables (allocated on the stack) and assignment
