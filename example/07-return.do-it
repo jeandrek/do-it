@@ -8,4 +8,5 @@
     (display-line "This line is unreached"))
   (display-line "This line is unreached"))
 
-(printf "Number = %d\n" (foo))
+(printf "Number = %d" (foo))
+(newline)
