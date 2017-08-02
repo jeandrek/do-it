@@ -1,4 +1,5 @@
-;;; Pair stuff from 05-pair2.do-it
+;;; Demonstrate Higher Order Procedures with MAP
+;;; List stuff from 05-pair2.do-it
 
 (defmacro defstruct (const . fields)
   (define (enumerate lst)
@@ -50,6 +51,11 @@
 
 (defproc square (n) (* n n))
 
-(write-list
- (map (procedure square)
-      (cons 1 (cons 2 (cons 3 (cons 4 0))))))
+;;; List (1 2 3 4 5 6)
+(defvar list
+  (cons 1 (cons 2 (cons 3 (cons 4 (cons 5 (cons 6 0)))))))
+
+(display "Orginal list		= ")
+(write-list list)
+(display "Map(square, list)	= ")
+(write-list (map (procedure square) list))
