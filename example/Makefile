@@ -3,16 +3,17 @@ SCHEME=		guile
 CFLAGS=		-m32 -Wall -O
 KEEPASM=	false
 
-all: $(EXAMPLES)
-
+.POSIX:
+.SUFFIXES:
 .SUFFIXES: .do-it
+.PHONY: clean
+
+all: $(EXAMPLES)
 
 .do-it:
 	(cd .. && $(SCHEME) compile.scm < example/$< > example/$@.s)
 	$(CC) $(CFLAGS) -o $@ $@.s ../runtime.c
 	$(KEEPASM) || rm -f $@.s
-
-.PHONY: clean
 
 clean:
 	rm -f $(EXAMPLES) *.s
