@@ -1,40 +1,19 @@
 ;;; Demonstrate Higher Order Procedures with MAP
-;;; List stuff from 05-pair2.do-it
+;;; List stuff from 04-pair1.do-it
 
-(defmacro defstruct (const . fields)
-  (define (enumerate lst)
-    (define (helper lst idx)
-      (if (null? lst)
-          '()
-          (cons idx (helper (cdr lst) (+ idx 1)))))
-    (helper lst 0))
-  (let* ((word-size 4)
-         (field-names (map car fields))
-         (field-count (length fields))
-         (field-indices (enumerate fields))
-         (getters field-names)
-         (setters (map cadr fields)))
-    `(begin
-       (defproc ,const ,field-names
-         (defvar obj (malloc (* ,word-size ,field-count)))
-         ,@(map (lambda (setter field-name)
-                  `(,setter obj ,field-name))
-                setters field-names)
-         obj)
-       ,@(map
-          (lambda (getter idx)
-            `(defproc ,getter (obj)
-               (peek (+ obj (* ,idx ,word-size)))))
-          getters field-indices)
-       ,@(map
-          (lambda (setter idx)
-            `(defproc ,setter (obj1 obj2)
-               (poke (+ obj1 (* ,idx ,word-size)) obj2)))
-          setters field-indices))))
+(defvar word-size 4)
 
-(defstruct cons
-  (car set-car)
-  (cdr set-cdr))
+(defproc cons (car cdr)
+  (defvar pair (malloc (* word-size 2)))
+  (set-car pair car)
+  (set-cdr pair cdr)
+  pair)
+
+(defproc set-car (pair car) (poke pair car))
+(defproc set-cdr (pair cdr) (poke (+ pair word-size) cdr))
+
+(defproc car (pair) (peek pair))
+(defproc cdr (pair) (peek (+ pair word-size)))
 
 (defproc write-list (list)
   (while (> list 0)
