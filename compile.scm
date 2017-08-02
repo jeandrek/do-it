@@ -16,7 +16,14 @@
 ;;; Guile needs this for some reason
 (use-modules (ice-9 r5rs))
 
+;;; Platform-dependant parameters
 (define word-size 4)
+(define abi-underscore? #t)
+
+(define entry-point
+  (if abi-underscore?
+      "_entry"
+      "entry"))
 
 ;;; Common Lisp FORMAT-style output.
 (define (emit port fmt . args)
@@ -118,7 +125,11 @@
                   '(#\_)
                   (string->list (number->string (char->ascii-code char)))
                   (helper (cdr lst))))))))
-  (list->string (helper (string->list (symbol->string sym)))))
+  (define (prefix lst)
+    (if abi-underscore?
+	(cons #\_ lst)
+	lst))
+  (list->string (prefix (helper (string->list (symbol->string sym))))))
 
 (define ascii-table
   '((#\newline 10) (#\space 32)
@@ -456,8 +467,8 @@
   (set! *stack* (list (cons 0 0)))
   (set! *toplevel* #t)
   (emit port "	.text")
-  (emit port "	.globl entry")
-  (emit port "entry:")
+  (emit port "	.globl ~s" entry-point)
+  (emit port "~s:" entry-point)
   (emit port "	pushl %ebp")
   (emit port "	movl %esp, %ebp")
   (call-with-input-file "library.do-it"
