@@ -1,0 +1,7 @@
+(defproc foo ()
+  (defvar x 1)
+  (block
+    (defvar y 2)
+    (return x)))
+
+(printf "Number = %d\n" (foo))

@@ -1,7 +1,14 @@
-EXAMPLES=	01-hello 02-greet 03-fibonacci 04-pair1 05-pair2 06-map
 SCHEME=		guile
 CFLAGS=		-m32 -Wall -O
 KEEPASM=	false
+EXAMPLES=\
+	01-hello\
+	02-greet\
+	03-fibonacci\
+	04-pair1\
+	05-pair2\
+	06-map\
+	07-return
 
 .POSIX:
 .SUFFIXES:
