@@ -447,45 +447,30 @@
 
 ;;; Compile a program.
 (define (compile-program exp port)
-  (let ((library? (true-for-all? (lambda (exp) (definition? exp))
-                                 (cdr exp))))
-    ;; Intialize global variables.
-    (set! *data* (open-output-string))
-    (set! *procedures* (open-output-string))
-    (set! *stack* (list (cons 0 0)))
-    (set! *toplevel* #t)
-    (emit port "  .text")
-    (emit port "  .globl entry")
-    (if library?
-        (begin
-          (emit port "entry:")
-          (emit port "  pushl %ebp")
-          (emit port "  movl %esp, %ebp")))
-    (call-with-input-file "library.do-it"
-      (lambda (library)
-        (compile (read-file-in-begin library)
-                 port
-                 (empty-environment))))
-    (compile exp port (empty-environment))
-    (cleanup port)
-    (if library?
-        (begin
-          (emit port "  popl %ebp")
-          (emit port "  ret")))
-    ;; Emit procedures.
-    (display (get-output-string *procedures*) port)
-    ;; Emit data.
-    (emit port "  .data")
-    (display (get-output-string *data*) port)))
-
-(define (definition? obj)
-  (or (tagged-list? obj 'defproc)
-      (tagged-list? obj 'defvar)))
-
-(define (true-for-all? pred lst)
-  (if (null? lst)
-      #t
-      (and (pred (car lst)) (true-for-all? pred (cdr lst)))))
+  ;; Intialize global variables.
+  (set! *data* (open-output-string))
+  (set! *procedures* (open-output-string))
+  (set! *stack* (list (cons 0 0)))
+  (set! *toplevel* #t)
+  (emit port "  .text")
+  (emit port "  .globl entry")
+  (emit port "entry:")
+  (emit port "  pushl %ebp")
+  (emit port "  movl %esp, %ebp")
+  (call-with-input-file "library.do-it"
+    (lambda (library)
+      (compile (read-file-in-begin library)
+               port
+               (empty-environment))))
+  (compile exp port (empty-environment))
+  (cleanup port)
+  (emit port "  popl %ebp")
+  (emit port "  ret")
+  ;; Emit procedures.
+  (display (get-output-string *procedures*) port)
+  ;; Emit data.
+  (emit port "  .data")
+  (display (get-output-string *data*) port))
 
 ;;; Read a program from the port INPUT and
 ;;; compile it to the port OUTPUT.
