@@ -321,7 +321,6 @@
           (emit port "	addl	$~n, %esp" word-size)
           (loop (- i 1))))))
 
-
 (define (empty-environment)
   (list (cons '() '())))
 
