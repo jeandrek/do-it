@@ -21,4 +21,4 @@
   (newline))
 
 (defproc newline ()
-  (putchar 10))
+  (putchar #\newline))
