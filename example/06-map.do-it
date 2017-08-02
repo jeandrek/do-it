@@ -1,4 +1,4 @@
-;;; Pair stuff from pairs-1.do-it
+;;; Pair stuff from 05-pair2.do-it
 
 (defmacro defstruct (const . fields)
   (define (enumerate lst)
