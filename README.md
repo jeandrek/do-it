@@ -46,31 +46,4 @@ cc -m32 -o test test.s runtime.c
 Do-it is documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
 
 ## Examples
-```scheme
-(display-line "Hello, world!")
-```
-
-```scheme
-(defproc greet (name)
-  (printf "Hello, %s!" name)
-  (newline))
-
-;;; Greet everyone
-;;; (the names are made up)
-(greet "Thomas")
-(greet "James")
-(greet "David")
-(greet "Tony")
-```
-
-```scheme
-;;; Get the nth Fibonacci number
-(defproc fib (n)
-  (if (< n 2)
-      n
-      (+ (fib (- n 1)) (fib (- n 2)))))
-
-(for (defvar i 1) (<= i 20) (inc i)
-  (printf "The %dth Fibonacci number is %d" i (fib i))
-  (newline))
-```
+Examples can be found in the `examples` folder. You can build them all with any POSIX-complaint make.
