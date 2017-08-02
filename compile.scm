@@ -471,7 +471,7 @@
   (emit port "~s:" entry-point)
   (emit port "	pushl	%ebp")
   (emit port "	movl	%esp, %ebp")
-  (call-with-input-file "library.do-it"
+  (call-with-input-file "lib.do-it"
     (lambda (library)
       (compile (read-file-in-begin library)
                port

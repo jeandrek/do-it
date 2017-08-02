@@ -12,7 +12,7 @@ all: $(EXAMPLES)
 
 .do-it:
 	(cd .. && $(SCHEME) compile.scm < example/$< > example/$@.s)
-	$(CC) $(CFLAGS) -o $@ $@.s ../runtime.c
+	$(CC) $(CFLAGS) -o $@ $@.s ../lib.c
 	$(KEEPASM) || rm -f $@.s
 
 clean:

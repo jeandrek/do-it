@@ -3,6 +3,13 @@
 
 extern void entry(void);
 
+int
+main(void)
+{
+  entry();
+  return 0;
+}
+
 // <
 uint32_t
 _60(uint32_t x, uint32_t y)
@@ -73,13 +80,6 @@ display(char *str)
   fputs(str, stdout);
 }
 
-// display-line
-void
-display_line(char *str)
-{
-  printf("%s\n", str);
-}
-
 // newline
 void
 newline(void)
@@ -99,11 +99,4 @@ void
 poke(uint32_t *x, uint32_t y)
 {
   *x = y;
-}
-
-int
-main(void)
-{
-  entry();
-  return 0;
 }

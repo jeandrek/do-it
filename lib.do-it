@@ -15,3 +15,7 @@
 
 (defproc >= (x y)
   (not (< x y)))
+
+(defproc display-line (str)
+  (display str)
+  (newline))
