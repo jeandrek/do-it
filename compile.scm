@@ -91,8 +91,10 @@
 ;;; Port for procedures
 (define *procedures* #f)
 
-;;; Stack of the stack index and how many items
-;;; need to be popped of the stack by CLEANUP
+;;; Each item of this stack represents a *lexical block* and contains:
+;;;  1) how many words need to be popped of the stack (used by CLEANUP)
+;;;  2) the stack index
+;;;  3) whether this block is a procedure or not (used by RETURN)
 (define *stack* '())
 
 ;;; #T if compiling in the global environment,
@@ -265,6 +267,7 @@
 (define (compile-return exp port env)
   (if (not (null? (cdr exp)))
       (compile (cadr exp) port env))
+  (cleanup-all-blocks port)
   (emit port "	popl	%ebp")
   (emit port "	ret"))
 
@@ -299,12 +302,25 @@
 ;;; Emit code to pop variables off the stack at the end
 ;;; of a procedure or block.
 (define (cleanup port)
-  (let loop ((i (caar *stack*)))
+  (cleanup-block (car *stack*) port)
+  (set! *stack* (cdr *stack*)))
+
+(define (cleanup-all-blocks port)
+  (let loop ((stack *stack*))
+    (if (cddar stack)
+	;; This lexical block is a procedure, clean it up and stop
+	(cleanup-block (car stack) port)
+	(begin
+	  (cleanup-block (car stack) port)
+	  (loop (cdr stack))))))
+
+(define (cleanup-block block port)
+  (let loop ((i (car block)))
     (if (> i 0)
         (begin
           (emit port "	addl	$~n, %esp" word-size)
-          (loop (- i 1)))))
-  (set! *stack* (cdr *stack*)))
+          (loop (- i 1))))))
+
 
 (define (empty-environment)
   (list (cons '() '())))
@@ -355,7 +371,7 @@
     (emit *procedures* "~s:" name)
     (emit *procedures* "	pushl	%ebp")
     (emit *procedures* "	movl	%esp, %ebp")
-    (set! *stack* (cons (cons 0 0) *stack*))
+    (set! *stack* (cons (cons 0 (cons 0 #t)) *stack*))
     (set! *toplevel* #f)
     ;; Bind parameters to arguments.
     (let loop ((i (* word-size 2))
@@ -395,10 +411,11 @@
         (emit port "	pushl	%eax")
         (set-car! *stack*
          (cons (+ (caar *stack*) 1)
-               (- (cdar *stack*) word-size)))
+               (cons (- (cadar *stack*) word-size)
+		     (cddar *stack*))))
         (environment-define! env (cadr exp)
          (string-append
-          (number->string (cdar *stack*))
+          (number->string (cadar *stack*))
           "(%ebp)")))))
 
 (put-special-form 'defvar compile-defvar)
@@ -415,7 +432,7 @@
 
 (define (compile-block exp port env)
   (let ((old-toplevel *toplevel*))
-    (set! *stack* (cons (cons 0 (cdar *stack*)) *stack*))
+    (set! *stack* (cons (cons 0 (cons (cadar *stack*) #f)) *stack*))
     (set! *toplevel* #f)
     (compile `(begin ,@(cdr exp))
              port (cons (cons '() '()) env))
@@ -464,7 +481,7 @@
   ;; Intialize global variables.
   (set! *data* (open-output-string))
   (set! *procedures* (open-output-string))
-  (set! *stack* (list (cons 0 0)))
+  (set! *stack* (list (cons 0 (cons 0 #f))))
   (set! *toplevel* #t)
   (emit port "	.text")
   (emit port "	.globl	~s" entry-point)
