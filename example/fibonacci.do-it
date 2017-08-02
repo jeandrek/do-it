@@ -1,0 +1,9 @@
+;;; Get the nth Fibonacci number
+(defproc fib (n)
+  (if (< n 2)
+      n
+      (+ (fib (- n 1)) (fib (- n 2)))))
+
+(for (defvar i 1) (<= i 20) (inc i)
+  (printf "The %dth Fibonacci number is %d" i (fib i))
+  (newline))

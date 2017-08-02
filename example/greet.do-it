@@ -1,0 +1,10 @@
+(defproc greet (name)
+  (printf "Hello, %s!" name)
+  (newline))
+
+;;; Greet everyone
+;;; (the names are made up)
+(greet "Thomas")
+(greet "James")
+(greet "David")
+(greet "Tony")

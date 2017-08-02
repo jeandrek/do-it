@@ -1,0 +1,25 @@
+(defvar word-size 4) ; how many bytes can fit into a register
+
+;;; The pair constructor
+(defproc cons (car cdr)
+  (defvar pair (malloc (* word-size 2)))
+  (set-car pair car)
+  (set-cdr pair cdr)
+  pair)
+
+;;; Pair mutators
+(defproc set-car (pair car) (poke pair car))
+(defproc set-cdr (pair cdr) (poke (+ pair word-size) cdr))
+
+;;; Pair selectors
+(defproc car (pair) (peek pair))
+(defproc cdr (pair) (peek (+ pair word-size)))
+
+(defproc write-list (list)
+  (while (> list 0)
+    (printf "%d " (car list))
+    (set list (cdr list)))
+  (newline))
+
+(write-list
+ (cons 1 (cons 2 (cons 3 (cons 4 0)))))
