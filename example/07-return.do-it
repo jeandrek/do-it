@@ -1,7 +1,11 @@
 (defproc foo ()
   (defvar x 1)
+  (display-line "This line is reached")
   (block
     (defvar y 2)
-    (return x)))
+    (display-line "This line is reached")
+    (return x)
+    (display-line "This line is unreached"))
+  (display-line "This line is unreached"))
 
 (printf "Number = %d\n" (foo))
