@@ -10,18 +10,13 @@ Because I want to learn about code generation.
 No.
 
 ## Limitations
-* No Garbage Collection
-* The compiler can only compile to 32-bit x86 GNU Assembly
+* No garbage collection.
+* The compiler can only compile to 32-bit x86 AT&T Assembly.
   (I just use GCC's `-m32` switch)
 * No types!! (The only type is a machine word.)
-* Unstable and buggy
-* Language not standardized
-* Imperative programs can get bugs that declarative programs are immune to
-
-## Operating system support
-* Do-it works on GNU/Linux and OpenBSD
-* Do-it fails on Apple macOS
-* Do-it has not been tested on MS Windows, Oracle Solaris or others
+* Unstable and buggy.
+* Language not standardized.
+* Limited operating system support.
 
 ## Features
 * Lexically scoped local variables (allocated on the stack) and assignment
@@ -31,6 +26,11 @@ No.
 * Last expression in a procedure is automatically returned &ndash; it would take pointless effort to *not* do that!
 * Super easy to interface with C
 * Macros, written in Scheme
+
+## Operating system support
+* Do-it works perfectly on GNU/Linux and OpenBSD.
+* Binaries compiled with do-it fail on Apple macOS.
+* I have not yet tested do-it on MS Windows, Oracle Solaris or others.
 
 ## Todo
 - [ ] Dynamic typing(?)
