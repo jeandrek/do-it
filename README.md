@@ -48,7 +48,7 @@ cc -m32 -o test test.s runtime.c
 ```
 
 ## Documentation
-Do-it is documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
+Do-it is fully documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
 
 ## Examples
 Examples can be found in the `examples` folder. You can build them all with any POSIX-complaint make.
