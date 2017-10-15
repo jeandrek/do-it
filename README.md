@@ -16,7 +16,7 @@ No.
 * No types!! (The only type is a machine word.)
 * Unstable and buggy.
 * Language not standardized.
-* Limited operating system support.
+* Variables only have dynamic extent (like languages such as C/C++).
 
 ## Features
 * Lexically scoped local variables (allocated on the stack) and assignment
