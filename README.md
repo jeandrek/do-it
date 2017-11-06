@@ -28,12 +28,12 @@ No.
 * Macros, written in Scheme
 
 ## Operating system support
-|     Operating system    |           Status             |
-| ----------------------- | ---------------------------- |
-| GNU/Linux and OpenBSD   | Works fine out-of-the-box.   |
-| Microsoft Windows       | Also works, you just need to set `abi-underscore?` to `#t`. |
-| Apple macOS             | Compiled programs don't run. |
-| Other operating systems | Not yet tested.              |
+|      Operating system     |           Status             |
+| ------------------------- | ---------------------------- |
+| GNU/Linux and OpenBSD     | Works fine out-of-the-box.   |
+| Microsoft Windows (MinGW) | Also works, you just need to set `abi-underscore?` to `#t`. |
+| Apple macOS               | Compiled programs don't run. |
+| Other operating systems   | Not yet tested.              |
 
 ## Todo
 - [ ] Dynamic typing(?)
