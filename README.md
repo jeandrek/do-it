@@ -35,9 +35,9 @@ No.
 | Apple macOS               | Compiled programs don't run. |
 | Other operating systems   | Not yet tested.              |
 
-<sup>1</sup> I last tested it on OpenBSD 6.1, OpenBSD 6.2 switched from GCC to Clang on i386 and amd64 so no promises it will still work.
+<sup>1: I last tested it on OpenBSD 6.1, OpenBSD 6.2 switched from GCC to Clang on i386 and amd64 so no promises it will still work.</sup>
 
-<sup>2</sup> [This](/Jonathan50/do-it/blob/2c22eba20de3d978dde41119e608c1f6cbddadeb/compile.scm#L21) is the line that needs to be edited.
+<sup>2: [This](/Jonathan50/do-it/blob/2c22eba20de3d978dde41119e608c1f6cbddadeb/compile.scm#L21) is the line that needs to be edited.</sup>
 
 ## Todo
 - [ ] Dynamic typing(?)
