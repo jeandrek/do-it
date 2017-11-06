@@ -28,9 +28,10 @@ No.
 * Macros, written in Scheme
 
 ## Operating system support
-* Do-it works perfectly on GNU/Linux and OpenBSD.
+* Do-it works out-of-the-box on GNU/Linux and OpenBSD.
+* Do-it also works on Microsoft Windows, just set `abi-underscore?` to `#t` at the top of `compile.scm`.
 * Binaries compiled with do-it fail on Apple macOS.
-* I have not yet tested do-it on MS Windows, Oracle Solaris or others.
+* I have not yet tested do-it on Oracle Solaris and other operating systems.
 
 ## Todo
 - [ ] Dynamic typing(?)
