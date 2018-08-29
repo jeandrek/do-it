@@ -44,16 +44,8 @@ No.
 - [ ] Abstract syntax(?)
 
 ## Usage
-Something like
-```sh
-guile compile.scm <test.do-it >test.s
-cc -m32 -o test test.s runtime.c
-```
+Edit Makefile as necessary. Then run `make` to compile the library. Now you can
+run `make <name>` to compile the source file <name>.do-it.
 
 ## Documentation
 Do-it is fully documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
-
-## Examples
-Examples can be found in the `examples` folder. You can build them all with any POSIX-complaint make.
-
-You can change into the examples folder and enter `make` to build all the examples, or you can enter `make` followed by the name of one or more examples if you don't want them all. You can also put `KEEPASM=true` at the end if you would like to look at the generated code.
