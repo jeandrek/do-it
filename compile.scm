@@ -42,7 +42,7 @@
 	     (definitions '())
 	     (expressions '()))
     (if (null? statements)
-	(values definitions (reverse expressions))
+	(values (reverse definitions) (reverse expressions))
 	(let ((statement (car statements)))
 	  (if (definition? statement)
 	      (if (and (defvar? statement)
