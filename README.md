@@ -45,7 +45,7 @@ No.
 
 ## Usage
 Edit Makefile as necessary. Then run `make` to compile the library. Now you can
-run `make <name>` to compile the source file <name>.do-it.
+run `make <name>` to compile the source file \<name\>.do-it.
 
 ## Documentation
 Do-it is fully documented in [the wiki](https://github.com/Jonathan50/do-it/wiki).
