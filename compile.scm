@@ -170,13 +170,14 @@
 (define (compile-variable exp env)
   (codegen-move (environment-lookup env exp) reg-result))
 
-(define (compile-application exp env)
-  (define (compile-arguments args)
+(define (compile-arguments args env)
     (if (not (null? args))
 	(begin (compile (car args) env)
 	       (codegen-push reg-result)
-	       (compile-arguments (cdr args)))))
-  (compile-arguments (reverse (operands exp)))
+	       (compile-arguments (cdr args) env))))
+
+(define (compile-application exp env)
+  (compile-arguments (reverse (operands exp)) env)
   (codegen-call (symbol->label (operator exp)))
   (codegen-pop (length (operands exp))))
 
@@ -252,6 +253,14 @@
 		reg-result))
 
 (put 'procedure 'compile compile-procedure)
+
+(define (compile-call exp env)
+  (compile-arguments (reverse (call-operands exp)) env)
+  (compile (call-operator exp) env)
+  (codegen-call-indirect reg-result)
+  (codegen-pop (length (call-operands exp))))
+
+(put 'call 'compile compile-call)
 
 (put 'defproc 'compile
      (lambda (exp env)
@@ -355,6 +364,9 @@
   (not (null? (cdr exp))))
 
 (define (procedure-name exp) (cadr exp))
+
+(define (call-operator exp) (cadr exp))
+(define (call-operands exp) (cddr exp))
 
 (define (make-application operator operands)
   (cons operator operands))
@@ -504,6 +516,10 @@
 (define (codegen-call l)
   (display "	call	")
   (display-line l))
+
+(define (codegen-call-indirect x)
+  (display "	call	*")
+  (display-line (location->assembly x)))
 
 (define (codegen-push x)
   (display "	pushl	")
