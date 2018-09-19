@@ -171,10 +171,10 @@
   (codegen-move (environment-lookup env exp) reg-result))
 
 (define (compile-arguments args env)
-    (if (not (null? args))
-	(begin (compile (car args) env)
-	       (codegen-push reg-result)
-	       (compile-arguments (cdr args) env))))
+  (if (not (null? args))
+      (begin (compile (car args) env)
+	     (codegen-push reg-result)
+	     (compile-arguments (cdr args) env))))
 
 (define (compile-application exp env)
   (compile-arguments (reverse (operands exp)) env)
