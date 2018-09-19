@@ -40,8 +40,8 @@ No.
 - [ ] Garbage collection(?)
 - [x] ~~Macros(?), make `for` and `inc` macros~~
 - [x] ~~Global variables~~
-- [x] Linking multiple files
-- [ ] Abstract syntax(?)
+- [x] ~~Linking multiple files~~
+- [x] ~~Abstract syntax(?)~~
 
 ## Usage
 Edit Makefile as necessary. Then run `make` to compile the library. Now you can
