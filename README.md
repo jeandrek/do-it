@@ -40,7 +40,7 @@ No.
 - [ ] Garbage collection(?)
 - [x] ~~Macros(?), make `for` and `inc` macros~~
 - [x] ~~Global variables~~
-- [ ] Linking multiple files
+- [x] Linking multiple files
 - [ ] Abstract syntax(?)
 
 ## Usage
