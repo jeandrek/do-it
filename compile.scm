@@ -177,9 +177,14 @@
 	     (compile-arguments (cdr args) env))))
 
 (define (compile-application exp env)
-  (compile-arguments (reverse (operands exp)) env)
-  (codegen-call (symbol->label (operator exp)))
-  (codegen-pop (length (operands exp))))
+  (cond ((get (operator exp) 'open-code)
+	 => (lambda (proc)
+	      (compile (car (operands exp)) env)
+	      (proc)))
+	(else
+	 (compile-arguments (reverse (operands exp)) env)
+	 (codegen-call (symbol->label (operator exp)))
+	 (codegen-pop (length (operands exp))))))
 
 (define (compile-quote exp env)
   (compile-datum (quoted-datum exp)))
