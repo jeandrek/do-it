@@ -383,6 +383,14 @@
   (and (pair? obj)
        (eq? (car obj) tag)))
 
+;;;; Open-coded primitives
+
+(define (open-code-peek)
+  (codegen-move (make-register-indirect (register reg-result) 0)
+		reg-result))
+
+(put 'peek 'open-code open-code-peek)
+
 ;;;; Compile-time environment
 
 (define (first-frame env) (car env))
