@@ -383,11 +383,16 @@
   (and (pair? obj)
        (eq? (car obj) tag)))
 
-;;;; Open-coded primitives
+;;;; Open-coded primitives (must be monadic)
+
+(define (open-code-not)
+  (display-line "	testl	%eax,%eax")
+  (display-line "	setz	%al"))
+
+(put 'not 'open-code open-code-not)
 
 (define (open-code-peek)
-  (codegen-move (make-register-indirect (register reg-result) 0)
-		reg-result))
+  (display-line "	movl	(%eax),%eax"))
 
 (put 'peek 'open-code open-code-peek)
 
