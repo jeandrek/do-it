@@ -436,25 +436,27 @@
 (define reg-frame '#(register ebp))
 
 (define (parameter-locations params)
-  (let loop ((num (length params))
+  (let loop ((k (length params))
+	     (off (* 2 word-size))
 	     (accum '()))
-    (if (zero? num)
-	accum
-	(loop (- num 1)
+    (if (zero? k)
+	(reverse accum)
+	(loop (- k 1)
+	      (+ off word-size)
 	      (cons (make-register-indirect
-		     (register reg-frame)
-		     (+ word-size (* word-size num)))
+		     (register reg-frame) off)
 		    accum)))))
 
 (define (local-locations vars)
-  (let loop ((num (length vars))
+  (let loop ((k (length vars))
+	     (off (- word-size))
 	     (accum '()))
-    (if (zero? num)
-	accum
-	(loop (- num 1)
+    (if (zero? k)
+	(reverse accum)
+	(loop (- k 1)
+	      (- off word-size)
 	      (cons (make-register-indirect
-		     (register reg-frame)
-		     (- (* word-size num)))
+		     (register reg-frame) off)
 		    accum)))))
 
 (define (codegen-text)
