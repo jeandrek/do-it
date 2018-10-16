@@ -144,13 +144,9 @@
 
 (define (compile-datum obj)
   (cond ((integer? obj)
-	 (codegen-move
-	  (make-immediate obj)
-	  reg-result))
+	 (codegen-move (make-immediate obj) reg-result))
 	((char? obj)
-	 (codegen-move
-	  (make-immediate (char->integer obj))
-	  reg-result))
+	 (codegen-move (make-immediate (char->integer obj)) reg-result))
 	((string? obj)
 	 (let ((label (make-label 's)))
 	   (set! *strings* (cons (cons label obj) *strings*))
