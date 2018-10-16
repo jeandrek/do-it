@@ -115,8 +115,8 @@
 		     definitions))
 	      (frame (make-frame
 		      (append params vars)
-		      (append (parameter-locations params)
-			      (local-locations vars))))
+		      (append (parameter-locations (length params))
+			      (local-locations (length vars)))))
 	      (env (extend-environment frame env)))
 	 (codegen-global name)
 	 (codegen-label name)
@@ -453,16 +453,16 @@
 (define reg-stack '#(register esp))
 (define reg-frame '#(register ebp))
 
-(define (parameter-locations params)
-  (do ((k (length params) (- k 1))
+(define (parameter-locations k)
+  (do ((k k (- k 1))
        (off (* 2 word-size) (+ off word-size))
        (accum '() (cons (make-register-indirect
 			 (register reg-frame) off)
 			accum)))
       ((zero? k) (reverse accum))))
 
-(define (local-locations vars)
-  (do ((k (length vars) (- k 1))
+(define (local-locations k)
+  (do ((k k (- k 1))
        (off (- word-size) (- off word-size))
        (accum '() (cons (make-register-indirect
 			 (register reg-frame) off)
