@@ -1,11 +1,11 @@
 ;;; This file is part of do-it.
 
-;;; do-it is free software: you can redistribute it and/or modify
+;;; Do-it is free software: you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
 ;;; the Free Software Foundation, either version 3 of the License, or
 ;;; (at your option) any later version.
 
-;;; do-it is distributed in the hope that it will be useful,
+;;; Do-it is distributed in the hope that it will be useful,
 ;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;;; GNU General Public License for more details.
@@ -13,502 +13,599 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with do-it.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Guile needs this for some reason
-(use-modules (ice-9 r5rs))
+(define (compile-input)
+  (let loop ((accum '()))
+    (let ((statement (read)))
+      (if (eof-object? statement)
+	  (compile-program (reverse accum))
+	  (loop (cons statement accum))))))
 
-;;; Platform-dependant parameters
-(define word-size 4)
-(define abi-underscore? #f)
+(define *strings* '())
 
-(define entry-point
-  (if abi-underscore?
-      "_entry"
-      "entry"))
+(define (compile-program program)
+  (set! *strings* '())
+  (let ((env (extend-environment (make-frame '() '()) '())))
+    (call-with-values
+     (lambda () (split program))
+     (lambda (definitions expressions)
+       (codegen-text)
+       (for-each
+	(lambda (def) (compile-definition def env))
+	definitions)
+       (if (not (null? expressions))
+	   (compile-defproc (make-defproc 'main '() expressions) env))
+       (if (not (null? *strings*))
+	   (compile-strings))))))
 
-;;; Common Lisp FORMAT-style output.
-(define (emit port fmt . args)
-  (let loop ((lst (string->list fmt))
-             (args args))
-    (if (not (null? lst))
-        (let ((char (car lst)))
-          (if (char=? char #\~)
-              (if (char=? (cadr lst) #\~)
-                  (begin
-                    (write-char #\~ port)
-                    (loop (cddr lst) args))
-                  (begin
-                    (case (cadr lst)
-                      ((#\c) (write-char (car args) port))
-                      ((#\v) (write (car args) port))
-                      ((#\n) (display (number->string (car args)) port))
-                      ((#\s) (display (car args) port)))
-                    (loop (cddr lst) (cdr args))))
-              (begin
-                (write-char char port)
-                (loop (cdr lst) args))))))
-  (newline port))
+(define (split statements)
+  (let loop ((statements statements)
+	     (definitions '())
+	     (expressions '()))
+    (if (null? statements)
+	(values (reverse definitions) (reverse expressions))
+	(let ((statement (car statements)))
+	  (if (definition? statement)
+	      (if (and (defvar? statement)
+		       (defvar-has-value? statement))
+		  (let ((def (make-defvar
+			      (defvar-variable statement)))
+			(exp (make-assignment
+			      (defvar-variable statement)
+			      (defvar-value statement))))
+		    (loop (cdr statements)
+			  (cons def definitions)
+			  (cons exp expressions)))
+		  (loop (cdr statements)
+			(cons statement definitions)
+			expressions))
+	      (loop (cdr statements)
+		    definitions
+		    (cons statement expressions)))))))
 
-(define (special-form? exp)
-  (and (pair? exp)
-       (keyword? (car exp))))
+;;;; Special form table
 
-(define (quotation? exp)
-  (tagged-list? exp 'quote))
+(define *operation-table* '())
 
-(define (application? exp)
-  (pair? exp))
+(define (get name op)
+  (let ((subtable (assq name *operation-table*)))
+    (and subtable
+	 (let ((record (assq op (cdr subtable))))
+	   (and record (cdr record))))))
 
-(define (variable? exp)
-  (and (symbol? exp)
-       (not (keyword? exp))))
+(define (put name op proc)
+  (let ((subtable (assq name *operation-table*)))
+    (if subtable
+	(let ((record (assq op (cdr subtable))))
+	  (if record
+	      (set-cdr! record proc)
+	      (set-cdr! subtable (cons (cons op proc) (cdr subtable)))))
+	(set! *operation-table*
+	      (cons (cons name (list (cons op proc))) *operation-table*)))))
 
-(define (immediate? obj)
-  (or (integer? obj)
-      (boolean? obj)
-      (char? obj)))
+;;;; Code generation
+
+(define (compile exp env)
+  (cond ((self-evaluating? exp) (compile-datum exp))
+	((variable? exp) (compile-variable exp env))
+	((special-form? exp)
+	 => (lambda (compiler) (compiler exp env)))
+	((application? exp) (compile-application exp env))
+	(else (error "Unknown expression type" exp))))
+
+(define (compile-definition definition env)
+  (cond ((defproc? definition)
+	 (compile-defproc definition env))
+	((defvar? definition)
+	 (compile-defvar definition env))
+	((defmacro? definition)
+	 (compile-defmacro definition env))))
+
+(define (compile-defproc definition env)
+  (let ((name (symbol->label (defproc-name definition)))
+	(params (defproc-parameters definition))
+	(body (defproc-body definition)))
+    (call-with-values
+     (lambda () (split body))
+     (lambda (definitions expressions)
+       (let* ((vars (map
+		     (lambda (definition)
+		       (if (defproc? definition)
+			   (error "Nested procedures are not yet supported")
+			   (defvar-variable definition)))
+		     definitions))
+	      (frame (make-frame
+		      (append params vars)
+		      (append (parameter-locations (length params))
+			      (local-locations (length vars)))))
+	      (env (extend-environment frame env)))
+	 (codegen-global name)
+	 (codegen-label name)
+	 (codegen-enter-procedure (length vars))
+	 (compile-sequence expressions env)
+	 (codegen-leave-procedure))))))
+
+(define (compile-defvar definition env)
+  ;; Define a global variable
+  (let ((var (defvar-variable definition)))
+    (if (not (variable? var))
+	(error "Not a variable in DEFVAR" var)
+	(let ((l (make-label 'variable)))
+	  (codegen-common l)
+	  (environment-define! env var (make-address l))))))
+
+(define (compile-defmacro definition env)
+  (let ((lambda-exp
+	 `(lambda (exp)
+	    (apply (lambda ,(defmacro-parameters definition)
+		     ,@(defmacro-body definition))
+		   (cdr exp)))))
+    (put (defmacro-name definition) 'compile
+	 (derived-form (eval lambda-exp (scheme-report-environment 5))))))
+
+(define (compile-datum obj)
+  (cond ((integer? obj)
+	 (codegen-move (make-immediate obj) reg-result))
+	((char? obj)
+	 (codegen-move (make-immediate (char->integer obj)) reg-result))
+	((string? obj)
+	 (let ((label (make-label 's)))
+	   (set! *strings* (cons (cons label obj) *strings*))
+	   (codegen-move (make-immediate label) reg-result)))
+	(else (error "Unknown datum type" obj))))
+
+(define (compile-strings)
+  (codegen-rodata)
+  (let loop ((strings *strings*))
+    (if (not (null? strings))
+	(let ((label (caar strings))
+	      (string (cdar strings)))
+	  (codegen-label label)
+	  (codegen-string string)
+	  (loop (cdr strings))))))
+
+(define (compile-variable exp env)
+  (codegen-move (environment-lookup env exp) reg-result))
+
+(define (compile-arguments args env)
+  (if (not (null? args))
+      (begin (compile (car args) env)
+	     (codegen-push reg-result)
+	     (compile-arguments (cdr args) env))))
+
+(define (compile-application exp env)
+  (cond ((get (operator exp) 'open-code)
+	 => (lambda (proc)
+	      (compile (car (operands exp)) env)
+	      (proc)))
+	(else
+	 (compile-arguments (reverse (operands exp)) env)
+	 (codegen-call (symbol->label (operator exp)))
+	 (codegen-pop (length (operands exp))))))
+
+(define (compile-quote exp env)
+  (compile-datum (quoted-datum exp)))
+
+(put 'quote 'compile compile-quote)
+
+(define (compile-if exp env)
+  (let ((end-label (make-label 'if))
+	(predicate (if-predicate exp))
+	(consequent (if-consequent exp)))
+    (if (if-two-paths? exp)
+	(let ((alt-label (make-label 'if))
+	      (alternative (if-alternative exp)))
+	  (compile predicate env)
+	  (codegen-compare (make-immediate 0) reg-result)
+	  (codegen-branch alt-label)
+	  (compile consequent env)
+	  (codegen-jump end-label)
+	  (codegen-label alt-label)
+	  (compile alternative env)
+	  (codegen-label end-label))
+	(begin
+	  (compile predicate env)
+	  (codegen-compare (make-immediate 0) reg-result)
+	  (codegen-branch end-label)
+	  (compile consequent env)
+	  (codegen-label end-label)))))
+
+(put 'if 'compile compile-if)
+
+(define (compile-while exp env)
+  (let ((loop-label (make-label 'while))
+	(end-label (make-label 'while))
+	(test (while-test exp))
+	(body (while-body exp)))
+    (codegen-label loop-label)
+    (compile test env)
+    (codegen-compare (make-immediate 0) reg-result)
+    (codegen-branch end-label)
+    (compile-sequence body env)
+    (codegen-jump loop-label)
+    (codegen-label end-label)))
+
+(put 'while 'compile compile-while)
+
+(define (compile-assignment exp env)
+  (compile (assignment-value exp) env)
+  (codegen-move reg-result (environment-lookup env (assignment-variable exp))))
+
+(put 'set 'compile compile-assignment)
+
+(define (compile-sequence exps env)
+  (for-each
+   (lambda (exp) (compile exp env))
+   exps))
+
+(define (compile-begin exp env)
+  (compile-sequence (begin-actions exp) env))
+
+(put 'begin 'compile compile-begin)
+
+(define (compile-return exp env)
+  (if (return-has-value? exp)
+      (compile (return-value exp) env))
+  (codegen-leave-procedure))
+
+(put 'return 'compile compile-return)
+
+(define (compile-procedure exp env)
+  (codegen-move (make-immediate (symbol->label (procedure-name exp)))
+		reg-result))
+
+(put 'procedure 'compile compile-procedure)
+
+(define (compile-call exp env)
+  (compile-arguments (reverse (call-operands exp)) env)
+  (compile (call-operator exp) env)
+  (codegen-call-indirect reg-result)
+  (codegen-pop (length (call-operands exp))))
+
+(put 'call 'compile compile-call)
+
+(put 'defproc 'compile
+     (lambda (exp env)
+       (error "Definition in expression context")))
+
+(put 'defvar 'compile
+     (lambda (exp env)
+       (error "Definition in expression context")))
+
+(put 'defmacro 'compile
+     (lambda (exp env)
+       (error "Definition in expression context")))
+
+;;;; Derived special forms
+
+(define (derived-form transformer)
+  (lambda (exp env)
+    (compile (transformer exp) env)))
+
+(define (expand-for exp)
+  (apply (lambda (init test step . body)
+	   `(begin
+	      ,init
+	      (while ,test
+		,@body
+		,step)))
+	 (cdr exp)))
+
+(put 'for 'compile (derived-form expand-for))
+
+;;;; Syntax
+
+(define (definition? statement)
+  (or (defproc? statement) (defvar? statement) (defmacro? statement)))
+
+(define (defproc? statement)
+  (tagged-list? statement 'defproc))
+(define (make-defproc name params body)
+  (cons 'defproc (cons name (cons params body))))
+(define (defproc-name def) (cadr def))
+(define (defproc-parameters def) (caddr def))
+(define (defproc-body def) (cdddr def))
+
+(define (defvar? statement)
+  (tagged-list? statement 'defvar))
+(define (make-defvar variable . value)
+  (if (null? value)
+      (list 'defvar variable)
+      (list 'defvar variable (car value))))
+(define (defvar-variable def) (cadr def))
+(define (defvar-value def) (caddr def))
+(define (defvar-has-value? def)
+  (not (null? (cddr def))))
+
+(define (defmacro? statement)
+  (tagged-list? statement 'defmacro))
+(define (defmacro-name def) (cadr def))
+(define (defmacro-parameters def) (caddr def))
+(define (defmacro-body def) (cdddr def))
 
 (define (self-evaluating? exp)
-  (or (immediate? exp)
+  (or (number? exp)
+      (boolean? exp)
+      (char? exp)
       (string? exp)))
 
-(define (keyword? obj)
-  (get-special-form obj))
+(define (variable? exp) (symbol? exp))
 
-;;; Return #T if OBJ is a pair and the
-;;; CAR of OBJ is TAG and #F otherwise.
+(define (special-form? exp)
+  (and (pair? exp) (get (keyword exp) 'compile)))
+(define (keyword exp) (car exp))
+
+(define (quoted-datum exp) (cadr exp))
+
+(define (make-if predicate consequent . alternative)
+  (if (null? alternative)
+      (list 'if predicate consequent)
+      (list 'if predicate consequent (car alternative))))
+(define (if-predicate exp) (cadr exp))
+(define (if-consequent exp) (caddr exp))
+(define (if-alternative exp) (cadddr exp))
+(define (if-two-paths? exp)
+  (not (null? (cdddr exp))))
+
+(define (make-while test body)
+  (cons 'while (cons test body)))
+(define (while-test exp) (cadr exp))
+(define (while-body exp) (cddr exp))
+
+(define (make-assignment var val)
+  (list 'set var val))
+(define (assignment-variable exp) (cadr exp))
+(define (assignment-value exp) (caddr exp))
+
+(define (make-begin actions) (cons 'begin actions))
+(define (begin-actions exp) (cdr exp))
+
+(define (make-return . value) (cons 'return value))
+(define (return-value exp) (cadr exp))
+(define (return-has-value? exp)
+  (not (null? (cdr exp))))
+
+(define (procedure-name exp) (cadr exp))
+
+(define (call-operator exp) (cadr exp))
+(define (call-operands exp) (cddr exp))
+
+(define (make-application operator operands)
+  (cons operator operands))
+(define (application? exp) (pair? exp))
+(define (operator exp) (car exp))
+(define (operands exp) (cdr exp))
+
 (define (tagged-list? obj tag)
   (and (pair? obj)
        (eq? (car obj) tag)))
 
-;;; Return the immediate representation of OBJ.
-(define (immediate-rep obj)
-  (cond ((number? obj) obj)
-        ((boolean? obj) (if obj 1 0))
-        ((char? obj) (char->ascii-code obj))))
+;;;; Open-coded primitives (must be monadic)
 
-;;; Port for constants
-(define *data* #f)
-;;; Port for procedures
-(define *procedures* #f)
+(define (open-code-not)
+  (display-line "	testl	%eax,%eax")
+  (display-line "	setz	%al"))
 
-;;; Each item of this stack represents a *lexical block* and contains:
-;;;  1) how many words need to be popped of the stack (used by CLEANUP)
-;;;  2) the stack index
-;;;  3) whether this block is a procedure or not (used by RETURN)
-(define *stack* '())
+(put 'not 'open-code open-code-not)
 
-;;; #T if compiling in the global environment,
-;;; #F otherwise.
-(define *toplevel* #f)
+(define (open-code-peek)
+  (display-line "	movl	(%eax),%eax"))
 
-;;; Return a new unique label containing NAME.
-(define make-label
-  (let ((count 0))
-    (lambda (name)
-      (set! count (+ count 1))
-      (string-append "."
-                     name
-                     "_"
-                     (number->string count)))))
+(put 'peek 'open-code open-code-peek)
 
-;;; Turn a Scheme symbol into an x86 symbol.
-(define (mangle sym)
-  (define (helper lst)
-    (if (null? lst)
-        '()
-        (let ((char (car lst)))
-          (cond ((char=? (car lst) #\-)
-                 (cons #\_ (helper (cdr lst))))
-                ((or (char-alphabetic? char)
-                     (char-numeric? char))
-                 (cons (char-downcase char) (helper (cdr lst))))
-                (else
-                 (append
-                  '(#\_)
-                  (string->list (number->string (char->ascii-code char)))
-                  (helper (cdr lst))))))))
-  (define (prefix lst)
-    (if abi-underscore?
-	(cons #\_ lst)
-	lst))
-  (list->string (prefix (helper (string->list (symbol->string sym))))))
+;;;; Compile-time environment
 
-(define ascii-table
-  '((#\newline 10) (#\space 32)
-    (#\! 33) (#\" 34) (#\# 35) (#\$ 36) (#\% 37) (#\& 38) (#\' 39)
-    (#\( 40) (#\) 41) (#\* 42) (#\+ 43) (#\, 44) (#\- 45) (#\. 46)
-    (#\/ 47) (#\0 48) (#\1 49) (#\2 50) (#\3 51) (#\4 52) (#\5 53)
-    (#\6 54) (#\7 55) (#\8 56) (#\9 57) (#\: 58) (#\; 59) (#\< 60)
-    (#\= 61) (#\> 62) (#\? 63) (#\@ 64) (#\A 65) (#\B 66) (#\C 67)
-    (#\D 68) (#\E 69) (#\F 70) (#\G 71) (#\H 72) (#\I 73) (#\J 74)
-    (#\K 75) (#\L 76) (#\M 77) (#\N 78) (#\O 79) (#\P 80) (#\Q 81)
-    (#\R 82) (#\S 83) (#\T 84) (#\U 85) (#\V 86) (#\W 87) (#\X 88)
-    (#\Y 89) (#\Z 90) (#\[ 91) (#\\ 92) (#\] 93) (#\^ 94) (#\_ 95)
-    (#\` 96) (#\a 97) (#\b 98) (#\c 99) (#\d 100) (#\e 101) (#\f 102)
-    (#\g 103) (#\h 104) (#\i 105) (#\j 106) (#\k 107) (#\l 108) (#\m 109)
-    (#\n 110) (#\o 111) (#\p 112) (#\q 113) (#\r 114) (#\s 115) (#\t 116)
-    (#\u 117) (#\v 118) (#\w 119) (#\x 120) (#\y 121) (#\z 122) (#\{ 123)
-    (#\| 124) (#\} 135) (#\~ 136)))
+(define (first-frame env) (car env))
+(define (extend-environment frame env)
+  (cons frame env))
 
-(define (char->ascii-code char)
-  (let ((pair (assv char ascii-table)))
-    (if pair
-        (cadr pair)
-        (error "Not a valid character" char))))
-
-(define *special-forms* '())
-
-(define (get-special-form name)
-  (let ((pair (assq name *special-forms*)))
-    (and pair (cdr pair))))
-
-(define (put-special-form name compiler)
-  (let ((pair (assq name *special-forms*)))
-    (if pair
-        (set-cdr! pair compiler)
-        (set! *special-forms*
-              (cons (cons name compiler) *special-forms*)))))
-
-(define (put-derived-form name transformer)
-  (define (compiler exp port env)
-    (compile (transformer exp) port env))
-  (put-special-form name compiler))
-
-;;; Compile a datum.
-(define (compile-datum obj port)
-  (cond ((immediate? obj)
-         (emit port "	movl	$~n, %eax" (immediate-rep obj)))
-        ((string? obj)
-         (let ((label (make-label "string")))
-           (emit *data* "~s:" label)
-           (emit *data* "	.asciz	~v" obj)
-           (emit port "	movl	$~s, %eax" label)))
-        (else
-         (error "Unknown datum type" obj))))
-
-(put-special-form 'quote
-                  (lambda (exp port env)
-                    (compile-datum (cadr exp) port)))
-
-(define (compile-if exp port env)
-  (let ((end-label (make-label "if_end"))
-        (test (cadr exp))
-        (conseq (caddr exp)))
-    (if (null? (cdddr exp))
-        ;; No alternative
-        (begin
-          (compile test port env)
-          (emit port "	cmpl	$0, %eax")
-          (emit port "	je	~s" end-label)
-          (compile conseq port env)
-          (emit port "~s:" end-label))
-        ;; Alternative
-        (let ((alt-label (make-label "if_alt"))
-              (alt (cadddr exp)))
-          (compile test port env)
-          (emit port "	cmpl	$0, %eax")
-          (emit port "	je	~s" alt-label)
-          (compile conseq port env)
-          (emit port "	jmp	~s" end-label)
-          (emit port "~s:" alt-label)
-          (compile alt port env)
-          (emit port "~s:" end-label)))))
-
-(put-special-form 'if compile-if)
-
-(define (compile-while exp port env)
-  (let ((loop-label (make-label "while_loop"))
-        (test (cadr exp))
-        (body (cddr exp)))
-    (if (not (always-falsey? exp))
-        (if (always-truthy? exp)
-            ;; Infinite loop
-            (begin
-              (emit port "~s:" loop-label)
-              (compile `(begin ,@body) port env)
-              (emit port "	jmp	~s" loop-label))
-            ;; Unknown loop length
-            (let ((end-label (make-label "while_end")))
-              (emit port "~s:" loop-label)
-              (compile test port env)
-              (emit port "	cmpl	$0, %eax")
-              (emit port "	je	~s" end-label)
-              (compile `(begin ,@body) port env)
-              (emit port "	jmp	~s" loop-label)
-              (emit port "~s:" end-label))))))
-
-(put-special-form 'while compile-while)
-
-;;; Return #T if OBJ is considered falsey
-;;; by do-it.
-(define (falsey? obj)
-  (or (eq? obj #f)
-      (= obj 0)))
-
-;;; Return #T if OBJ is considered truthy
-;;; by do-it.
-(define (truthy? obj)
-  (not (falsey? obj)))
-
-;;; Try to determine if EXP will always
-;;; evaluate to a falsey value.
-(define (always-falsey? exp)
-  (cond ((self-evaluating? exp) (falsey? exp))
-        ((quotation? exp) (falsey? (cadr exp)))
-        (else #f)))
-
-;;; Try to determine if EXP will always
-;;; evaluate to a truthy value.
-(define (always-truthy? exp)
-  (cond ((self-evaluating? exp) (truthy? exp))
-        ((quotation? exp) (truthy? (cadr exp)))
-        (else #f)))
-
-(define (compile-return exp port env)
-  (if (not (null? (cdr exp)))
-      (compile (cadr exp) port env))
-  (cleanup-all-blocks port)
-  (emit port "	popl	%ebp")
-  (emit port "	ret"))
-
-(put-special-form 'return compile-return)
-
-(define (compile-begin exp port env)
-  (for-each
-   (lambda (x) (compile x port env))
-   (cdr exp)))
-
-(put-special-form 'begin compile-begin)
-
-;;; Compile a procedure application.
-(define (compile-application exp port env)
-  (push-args (cdr exp) port env)
-  (emit port "	call	~s" (mangle (car exp)))
-  (pop-args (cdr exp) port))
-
-(define (push-args operands port env)
-  (for-each
-   (lambda (operand)
-     (compile operand port env)
-     (emit port "	pushl	%eax"))
-   (reverse operands)))
-
-(define (pop-args operands port)
-  (if (not (null? operands))
-      (emit port "	addl	$~n, %esp" (* word-size (length operands)))))
-
-;;; Emit code to pop variables off the stack at the end
-;;; of a procedure or block.
-(define (cleanup port)
-  (cleanup-block (car *stack*) port)
-  (set! *stack* (cdr *stack*)))
-
-(define (cleanup-all-blocks port)
-  (let loop ((stack *stack*))
-    (if (cddar stack)
-	;; This lexical block is a procedure, clean it up and stop
-	(cleanup-block (car stack) port)
-	(begin
-	  (cleanup-block (car stack) port)
-	  (loop (cdr stack))))))
-
-(define (cleanup-block block port)
-  (let ((i (car block)))
-    (if (> i 0)
-	(emit port "	addl	$~n, %esp" (* word-size i)))))
-
-(define (empty-environment)
-  (list (cons '() '())))
-
-;;; Get the assembly expession pointing to the value
-;;; of the variable VAR from the environment ENV.
 (define (environment-lookup env var)
   (if (null? env)
       (error "Unbound variable" var)
-      (let loop ((vars (caar env))
-                 (vals (cdar env)))
-        (cond ((null? vars)
-               (environment-lookup (cdr env) var))
-              ((eq? (car vars) var) (car vals))
-              (else
-               (loop (cdr vars)
-                     (cdr vals)))))))
+      (let loop ((vars (frame-variables (first-frame env)))
+		 (locs (frame-locations (first-frame env))))
+	(cond ((null? vars)
+	       (environment-lookup (cdr env) var))
+	      ((eq? (car vars) var) (car locs))
+	      (else
+	       (loop (cdr vars) (cdr locs)))))))
 
-;;; Define the variable VAR to be the assembly
-;;; expession VAL in the frame FRAME.
-(define (frame-define! frame var val)
-  (let loop ((vars (car frame))
-             (vals (cdr frame)))
-    (cond ((null? vars)
-           ;; The frame doesn't already have a variable
-           ;; of this name, create a new binding.
-           (set-car! frame (cons var (car frame)))
-           (set-cdr! frame (cons val (cdr frame))))
-          ((eq? (car vars) var)
-           ;; The frame already has a variable of this
-           ;; name, replace it.
-           (set-car! vals val))
-          (else
-           (loop (cdr vars) (cdr vals))))))
+(define (environment-define! env var loc)
+  (frame-add-binding! (first-frame env) var loc))
 
-;;; Define the variable var to be the assembly
-;;; expession val in the environment env.
-(define (environment-define! env var val)
-  (frame-define! (car env) var val))
+;;; Each lexical block introduces a new frame into the compile-
+;;; time environment. These don't correspond to stack frames.
+(define (make-frame vars locs) (cons vars locs))
+(define (frame-variables frame) (car frame))
+(define (frame-locations frame) (cdr frame))
+(define (frame-add-binding! frame var loc)
+  (set-car! frame (cons var (frame-variables frame)))
+  (set-cdr! frame (cons loc (frame-locations frame))))
 
-(define (compile-defproc exp port env)
-  (let ((name (mangle (cadr exp)))
-        (params (caddr exp))
-        (body (cdddr exp))
-        (new-env (cons (cons '() '()) env))
-        (old-toplevel *toplevel*))
-    (emit *procedures* "	.globl	~s" name)
-    (emit *procedures* "~s:" name)
-    (emit *procedures* "	pushl	%ebp")
-    (emit *procedures* "	movl	%esp, %ebp")
-    (set! *stack* (cons (cons 0 (cons 0 #t)) *stack*))
-    (set! *toplevel* #f)
-    ;; Bind parameters to arguments.
-    (let loop ((i (* word-size 2))
-               (params params))
-      (if (not (null? params))
-          (begin
-            (environment-define! new-env (car params)
-             (string-append (number->string i) "(%ebp)"))
-            (loop (+ i word-size) (cdr params)))))
-    ;; Compile the procedure body.
-    (compile `(begin ,@body) *procedures* new-env)
-    ;; Emit cleanup code.
-    (cleanup *procedures*)
-    (emit *procedures* "	popl	%ebp")
-    (emit *procedures* "	ret")
-    (set! *toplevel* old-toplevel)))
+;;;; Machine-dependant code generation
 
-(put-special-form 'defproc compile-defproc)
+(define word-size 4)
+(define abi-underscore? #f)
 
-(define (compile-defvar exp port env)
-  (if (not (variable? (cadr exp)))
-      (error "Not a variable in DEFVAR:" (cadr exp)))
-  (if *toplevel*
-      ;; Define a global variable
-      (let ((label (make-label "variable")))
-        (emit *data* "~s:" label)
-        (emit *data* "	.fill	1, ~n, 0" word-size)
-        (if (pair? (cddr exp))
-            (begin
-              (compile (caddr exp) port env)
-              (emit port "	movl	%eax, ~s" label)))
-        (environment-define! env (cadr exp) label))
-      ;; Define a local variable
+(define (mode loc) (vector-ref loc 0))
+(define (immediate loc) (vector-ref loc 1))
+(define (register loc) (vector-ref loc 1))
+(define (base loc) (vector-ref loc 1))
+(define (offset loc) (vector-ref loc 2))
+(define (make-immediate n) (vector 'immediate n))
+(define (make-register reg) (vector 'register reg))
+(define (make-register-indirect reg off)
+  (vector 'register-indirect reg off))
+(define (make-address base) (vector 'address base))
+(define (make-address-with-offset base off)
+  (vector 'address-with-offset base off))
+(define (immediate? loc) (eq? (mode loc) 'immediate))
+(define (register? loc) (eq? (mode loc) 'register))
+(define (register-indirect? loc) (eq? (mode loc) 'register-indirect))
+(define (address? loc) (eq? (mode loc) 'address))
+(define (address-with-offset? loc) (eq? (mode loc) 'address-with-offset))
+
+(define reg-result '#(register eax))
+(define reg-counter '#(register ecx))
+(define reg-stack '#(register esp))
+(define reg-frame '#(register ebp))
+
+(define (parameter-locations k)
+  (do ((k k (- k 1))
+       (off (* 2 word-size) (+ off word-size))
+       (accum '() (cons (make-register-indirect
+			 (register reg-frame) off)
+			accum)))
+      ((zero? k) (reverse accum))))
+
+(define (local-locations k)
+  (do ((k k (- k 1))
+       (off (- word-size) (- off word-size))
+       (accum '() (cons (make-register-indirect
+			 (register reg-frame) off)
+			accum)))
+      ((zero? k) (reverse accum))))
+
+(define (codegen-text)
+  (display-line "	.text"))
+
+(define (codegen-rodata)
+  (display-line "	.section	.rodata"))
+
+(define (codegen-common l)
+  (display "	.comm	")
+  (display l)
+  (display-line ",4,4"))
+
+(define (codegen-global l)
+  (display "	.globl	")
+  (display-line l))
+
+(define (codegen-string s)
+  (display "	.asciz	")
+  (write-line s))
+
+(define (codegen-enter-procedure num)
+  (codegen-push reg-frame)
+  (codegen-move reg-stack reg-frame)
+  (if (> num 0)
       (begin
-        (if (pair? (cddr exp))
-            (compile (caddr exp) port env))
-        (emit port "	pushl	%eax")
-        (set-car! *stack*
-         (cons (+ (caar *stack*) 1)
-               (cons (- (cadar *stack*) word-size)
-		     (cddar *stack*))))
-        (environment-define! env (cadr exp)
-         (string-append
-          (number->string (cadar *stack*))
-          "(%ebp)")))))
+	(display "	subl	$")
+	(display (* num word-size))
+	(display-line ",%esp"))))
 
-(put-special-form 'defvar compile-defvar)
+(define (codegen-leave-procedure)
+  (display-line "	leave")
+  (display-line "	ret"))
 
-(define (compile-set exp port env)
-  (compile (caddr exp) port env)
-  (emit port "	movl	%eax, ~s" (environment-lookup env (cadr exp))))
+(define (codegen-move a b)
+  (display "	movl	")
+  (display (location->assembly a))
+  (display ",")
+  (display-line (location->assembly b)))
 
-(put-special-form 'set compile-set)
+(define (codegen-compare a b)
+  (display "	cmpl	")
+  (display (location->assembly a))
+  (display ",")
+  (display-line (location->assembly b)))
 
-;;; Compile a variable reference.
-(define (compile-variable exp port env)
-  (emit port "	movl	~s, %eax" (environment-lookup env exp)))
+(define (codegen-label l)
+  (display l)
+  (display-line ":"))
 
-(define (compile-block exp port env)
-  (let ((old-toplevel *toplevel*))
-    (set! *stack* (cons (cons 0 (cons (cadar *stack*) #f)) *stack*))
-    (set! *toplevel* #f)
-    (compile `(begin ,@(cdr exp))
-             port (cons (cons '() '()) env))
-    (cleanup port)
-    (set! *toplevel* old-toplevel)))
+(define (codegen-jump l)
+  (display "	jmp	")
+  (display-line l))
 
-(put-special-form 'block compile-block)
+(define (codegen-branch l)
+  (display "	jz	")
+  (display-line l))
 
-(define (compile-procedure exp port env)
-  (emit port "	movl	$~s, %eax" (mangle (cadr exp))))
+(define (codegen-call l)
+  (display "	call	")
+  (display-line l))
 
-(put-special-form 'procedure compile-procedure)
+(define (codegen-call-indirect x)
+  (display "	call	*")
+  (display-line (location->assembly x)))
 
-(define (compile-call exp port env)
-  (push-args (cddr exp) port env)
-  (compile (cadr exp) port env)
-  (emit port "	call	*%eax")
-  (pop-args (cddr exp) port))
+(define (codegen-push x)
+  (display "	pushl	")
+  (display-line (location->assembly x)))
 
-(put-special-form 'call compile-call)
+(define (codegen-pop x)
+  (cond ((and (number? x) (> x 0))
+	 (display "	addl	$")
+	 (display (* word-size x))
+	 (display ",%esp")
+	 (newline))
+	((not (number? x))
+	 (display "	popl	")
+	 (display (location->assembly x))
+	 (newline))))
 
-(define (compile-defmacro exp env port)
-  (if (not (symbol? (cadr exp)))
-      (error "Not an identifier in DEFMACRO:" (cadr exp)))
-  (let ((lambda-exp
-         `(lambda (exp)
-            (apply (lambda ,(caddr exp)
-                     ,@(cdddr exp))
-                   (cdr exp)))))
-    (put-derived-form (cadr exp)
-                      (eval lambda-exp (scheme-report-environment 5)))))
+(define (display-line obj)
+  (display obj)
+  (newline))
 
-(put-special-form 'defmacro compile-defmacro)
+(define (write-line obj)
+  (write obj)
+  (newline))
 
-;;; Compile an expression.
-(define (compile exp port env)
-  (cond ((self-evaluating? exp) (compile-datum exp port))
-        ((variable? exp) (compile-variable exp port env))
-        ((special-form? exp)
-         ((get-special-form (car exp)) exp port env))
-        ((application? exp) (compile-application exp port env))
-        (else (error "Unknown expression type:" exp))))
+(define make-label
+  (let ((n 0))
+    (lambda (name)
+      (set! n (+ n 1))
+      (string-append ".L" (symbol->string name) (number->string n)))))
 
-;;; Compile a program.
-(define (compile-program exp port)
-  ;; Intialize global variables.
-  (set! *data* (open-output-string))
-  (set! *procedures* (open-output-string))
-  (set! *stack* (list (cons 0 (cons 0 #f))))
-  (set! *toplevel* #t)
-  (emit port "	.text")
-  (emit port "	.globl	~s" entry-point)
-  (emit port "~s:" entry-point)
-  (emit port "	pushl	%ebp")
-  (emit port "	movl	%esp, %ebp")
-  (call-with-input-file "lib.do-it"
-    (lambda (library)
-      (compile (read-file-in-begin library)
-               port
-               (empty-environment))))
-  (compile exp port (empty-environment))
-  (cleanup port)
-  (emit port "	popl	%ebp")
-  (emit port "	ret")
-  ;; Emit procedures.
-  (display (get-output-string *procedures*) port)
-  ;; Emit data.
-  (emit port "	.data")
-  (display (get-output-string *data*) port))
+(define operators
+  ;; Arithmetic operators are replaced with these names to avoid "mangling"
+  '((+ "add")
+    (- "sub")
+    (* "mul")
+    (/ "div")
+    (< "lt")
+    (= "eql")
+    (> "gt")
+    (<= "lteql")
+    (>= "gteql")))
 
-;;; Read a program from the port INPUT and
-;;; compile it to the port OUTPUT.
-(define (compile-file input output)
-  (compile-program (read-file-in-begin input)
-                   output))
+(define (symbol->label sym)
+  (define (remove-symbols str)
+    (let loop ((lst (string->list str))
+	       (accum '()))
+      (cond ((null? lst)
+	     (list->string (reverse accum)))
+	    ((char=? (car lst) #\-)
+	     (loop (cdr lst) (cons #\_ accum)))
+	    ((char=? (car lst) #\?)
+	     (loop (cdr lst) (cons #\P (cons #\_ accum))))
+	    (else
+	     (loop (cdr lst) (cons (car lst) accum))))))
+  (let* ((record (assq sym operators))
+	 (str
+	  (if record
+	      (cadr record)
+	      (remove-symbols (symbol->string sym)))))
+    (if abi-underscore?
+	(string-append "_" str)
+	str)))
 
-(define (read-file-in-begin port)
-  (let loop ((accum '(begin)))
-    (let ((exp (read port)))
-      (if (eof-object? exp)
-          (reverse accum)
-          (loop (cons exp accum))))))
+(define (location->assembly loc)
+  (cond ((immediate? loc)
+	 (if (number? (immediate loc))
+	     (string-append "$" (number->string (immediate loc)))
+	     (string-append "$" (immediate loc))))
+	((register? loc)
+	 (string-append "%" (symbol->string (register loc))))
+	((register-indirect? loc)
+	 (if (not (zero? (offset loc)))
+	     (string-append (number->string (offset loc))
+			    "(%" (symbol->string (register loc)) ")")
+	     (string-append "(%" (symbol->string (register loc)) ")")))
+	((address? loc) (base loc))
+	((address-with-offset? loc)
+	 (string-append (base loc) "+"
+			(number->string (offset loc))))))
 
-(compile-file (current-input-port) (current-output-port))
+(compile-input)

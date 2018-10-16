@@ -1,95 +1,90 @@
+/*
+ * This file is part of do-it.
+ *
+ * Do-it is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Do-it is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with do-it.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
-#include <stdint.h>
-
-extern void entry(void);
 
 int
-main(void)
+add(int a, int b)
 {
-  entry();
-  return 0;
+	return a + b;
 }
 
-// <
-uint32_t
-_60(uint32_t x, uint32_t y)
-{
-  return x < y;
-}
-
-// =
-uint32_t
-_61(uint32_t x, uint32_t y)
-{
-  return x == y;
-}
-
-// char=?
 int
-char_61_63(char x, char y)
+sub(int a, int b)
 {
-  return x == y;
+	return a - b;
 }
 
-// >
-uint32_t
-_62(uint32_t x, uint32_t y)
+int
+mul(int a, int b)
 {
-  return x > y;
+	return a * b;
 }
 
-// +
-uint32_t
-_43(uint32_t x, uint32_t y)
+int
+quotient(int a, int b)
 {
-  return x + y;
+	return a / b;
 }
 
-// -
-uint32_t
-_(uint32_t x, uint32_t y)
+int
+remainder(int a, int b)
 {
-  return x - y;
+	return a % b;
 }
 
-// *
-uint32_t
-_42(uint32_t x, uint32_t y)
+int
+lt(int a, int b)
 {
-  return x * y;
+	return a < b;
 }
 
-// /
-uint32_t
-_47(uint32_t x, uint32_t y)
+int
+eql(int a, int b)
 {
-  return x / y;
+	return a == b;
 }
 
-// not
+int
+gt(int a, int b)
+{
+	return a > b;
+}
+
 int
 not(int x)
 {
-  return !x;
+	return !x;
 }
 
-// display
 void
-display(char *str)
+display(const char *str)
 {
-  fputs(str, stdout);
+	fputs(str, stdout);
 }
 
-// peek
-uint32_t
-peek(uint32_t *x)
+long
+peek(const long *addr)
 {
-  return *x;
+	return *addr;
 }
 
-// poke
 void
-poke(uint32_t *x, uint32_t y)
+poke(long *addr, long x)
 {
-  *x = y;
+	*addr = x;
 }

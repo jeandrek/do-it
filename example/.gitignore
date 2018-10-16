@@ -1,8 +1,7 @@
 01-hello
 02-greet
 03-fibonacci
-04-pair1
-05-pair2
-06-map
-07-return
+04-pairs
+05-map
+06-return
 *.s

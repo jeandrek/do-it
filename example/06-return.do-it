@@ -1,8 +1,7 @@
 (defproc foo ()
   (defvar x 1)
   (display-line "This line is reached")
-  (block
-    (defvar y 2)
+  (begin
     (display-line "This line is reached")
     (return x)
     (display-line "This line is unreached"))
