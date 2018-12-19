@@ -166,11 +166,11 @@
 (define (compile-variable exp env)
   (codegen-move (environment-lookup env exp) reg-result))
 
-(define (compile-arguments args env)
+(define (compile-arguments args locs env)
   (if (not (null? args))
       (begin (compile (car args) env)
-	     (codegen-push reg-result)
-	     (compile-arguments (cdr args) env))))
+	     (codegen-move reg-result (car locs))
+	     (compile-arguments (cdr args) (cdr locs) env))))
 
 (define (compile-application exp env)
   (cond ((get (operator exp) 'open-code)
@@ -178,9 +178,11 @@
 	      (compile (car (operands exp)) env)
 	      (proc)))
 	(else
-	 (compile-arguments (reverse (operands exp)) env)
-	 (codegen-call (symbol->label (operator exp)))
-	 (codegen-pop (length (operands exp))))))
+	 (let ((k (length (operands exp))))
+	   (codegen-allocate-arguments k)
+	   (compile-arguments (operands exp) (argument-locations k) env)
+	   (codegen-call (symbol->label (operator exp)))
+	   (codegen-release-arguments k)))))
 
 (define (compile-quote exp env)
   (compile-datum (quoted-datum exp)))
@@ -256,10 +258,12 @@
 (put 'procedure 'compile compile-procedure)
 
 (define (compile-call exp env)
-  (compile-arguments (reverse (call-operands exp)) env)
-  (compile (call-operator exp) env)
-  (codegen-call-indirect reg-result)
-  (codegen-pop (length (call-operands exp))))
+  (let ((k (length (call-operands exp))))
+    (codegen-allocate-arguments k)
+    (compile-arguments (call-operands exp) (argument-locations k) env)
+    (compile (call-operator exp) env)
+    (codegen-call-indirect reg-result)
+    (codegen-release-arguments k)))
 
 (put 'call 'compile compile-call)
 
@@ -425,6 +429,7 @@
 
 (define word-size 4)
 (define abi-underscore? #f)
+(define abi-stack-align 16)
 
 (define (mode loc) (vector-ref loc 0))
 (define (immediate loc) (vector-ref loc 1))
@@ -465,11 +470,19 @@
 			accum)))
       ((zero? k) (reverse accum))))
 
+(define (argument-locations k)
+  (do ((k k (- k 1))
+       (off 0 (+ off word-size))
+       (accum '() (cons (make-register-indirect
+			 (register reg-stack) off)
+			accum)))
+      ((zero? k) (reverse accum))))
+
 (define (codegen-text)
   (display-line "	.text"))
 
 (define (codegen-rodata)
-  (display-line "	.section	.rodata"))
+  (display-line "	.text"))
 
 (define (codegen-common l)
   (display "	.comm	")
@@ -484,18 +497,36 @@
   (display "	.asciz	")
   (write-line s))
 
-(define (codegen-enter-procedure num)
+(define (codegen-enter-procedure k)
   (codegen-push reg-frame)
   (codegen-move reg-stack reg-frame)
-  (if (> num 0)
+  (if (or (> k 0) (not (= abi-stack-align word-size)))
       (begin
 	(display "	subl	$")
-	(display (* num word-size))
+	(display (- (* abi-stack-align
+		       (ceiling (/ (* (+ 2 k) word-size) abi-stack-align)))
+		    (* 2 word-size)))
 	(display-line ",%esp"))))
 
 (define (codegen-leave-procedure)
   (display-line "	leave")
   (display-line "	ret"))
+
+(define (codegen-allocate-arguments k)
+  (if (> k 0)
+      (begin
+	(display "	subl	$")
+	(display (* abi-stack-align
+		    (ceiling (/ (* k word-size) abi-stack-align))))
+	(display-line ",%esp"))))
+
+(define (codegen-release-arguments k)
+  (if (> k 0)
+      (begin
+	(display "	addl	$")
+	(display (* abi-stack-align
+		    (ceiling (/ (* k word-size) abi-stack-align))))
+	(display-line ",%esp"))))
 
 (define (codegen-move a b)
   (display "	movl	")
@@ -532,17 +563,6 @@
 (define (codegen-push x)
   (display "	pushl	")
   (display-line (location->assembly x)))
-
-(define (codegen-pop x)
-  (cond ((and (number? x) (> x 0))
-	 (display "	addl	$")
-	 (display (* word-size x))
-	 (display ",%esp")
-	 (newline))
-	((not (number? x))
-	 (display "	popl	")
-	 (display (location->assembly x))
-	 (newline))))
 
 (define (display-line obj)
   (display obj)

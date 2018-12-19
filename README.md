@@ -17,8 +17,8 @@ No.
 |      Operating system     |           Status             |
 | ------------------------- | ---------------------------- |
 | GNU/Linux and OpenBSD     | Works fine out-of-the-box.   |
-| Microsoft Windows (MinGW) | Also works, you just need to set `abi-underscore?` to `#t`. |
-| macOS                     | Compiled programs don't run. |
+| Microsoft Windows (MinGW) | Set `abi-underscore?` to `#t`. |
+| macOS                     | Set `abi-underscore?` to `#t`. |
 | Other operating systems   | Not yet tested.              |
 
 ## Usage
