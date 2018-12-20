@@ -446,9 +446,9 @@
   (display-line "	.text"))
 
 (define (codegen-common l)
-  (display "	.comm	")
+  (display "	.lcomm	")
   (display l)
-  (display-line ",4,4"))
+  (display-line ",4"))
 
 (define (codegen-global l)
   (display "	.globl	")
