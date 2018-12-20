@@ -8,10 +8,10 @@ Because I want to learn about code generation.
 No.
 
 ## Limitations
-* The compiler can only compile to 32-bit x86 AT&T Assembly.
-  (I just use GCC's `-m32` switch)
+* The compiler can only compile to 32-bit x86 Assembly. (Use the `-m32` option
+  for 64-bit GCC/Clang)
 * No types!! (The only type is a machine word.)
-* Variables only have dynamic extent (like languages such as C/C++).
+* Variables only have dynamic extent (like C/C++).
 
 ## Operating system support
 |      Operating system     |           Status             |

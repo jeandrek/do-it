@@ -394,14 +394,14 @@
 (define abi-stack-align 16)
 
 (define (mode loc) (vector-ref loc 0))
-(define (immediate loc) (vector-ref loc 1))
-(define (register loc) (vector-ref loc 1))
+(define (immediate-value loc) (vector-ref loc 1))
+(define (register-name loc) (vector-ref loc 1))
 (define (base loc) (vector-ref loc 1))
 (define (offset loc) (vector-ref loc 2))
 (define (make-immediate n) (vector 'immediate n))
-(define (make-register reg) (vector 'register reg))
-(define (make-register-indirect reg off)
-  (vector 'register-indirect reg off))
+(define (make-register name) (vector 'register name))
+(define (make-register-indirect name off)
+  (vector 'register-indirect name off))
 (define (make-address base) (vector 'address base))
 (define (make-address-with-offset base off)
   (vector 'address-with-offset base off))
@@ -420,7 +420,7 @@
   (do ((k k (- k 1))
        (off (* 2 word-size) (+ off word-size))
        (accum '() (cons (make-register-indirect
-			 (register reg-frame) off)
+			 (register-name reg-frame) off)
 			accum)))
       ((zero? k) (reverse accum))))
 
@@ -428,7 +428,7 @@
   (do ((k k (- k 1))
        (off (- word-size) (- off word-size))
        (accum '() (cons (make-register-indirect
-			 (register reg-frame) off)
+			 (register-name reg-frame) off)
 			accum)))
       ((zero? k) (reverse accum))))
 
@@ -436,7 +436,7 @@
   (do ((k k (- k 1))
        (off 0 (+ off word-size))
        (accum '() (cons (make-register-indirect
-			 (register reg-stack) off)
+			 (register-name reg-stack) off)
 			accum)))
       ((zero? k) (reverse accum))))
 
@@ -575,16 +575,16 @@
 
 (define (location->assembly loc)
   (cond ((immediate? loc)
-	 (if (number? (immediate loc))
-	     (string-append "$" (number->string (immediate loc)))
-	     (string-append "$" (immediate loc))))
+	 (if (number? (immediate-value loc))
+	     (string-append "$" (number->string (immediate-value loc)))
+	     (string-append "$" (immediate-value loc))))
 	((register? loc)
-	 (string-append "%" (symbol->string (register loc))))
+	 (string-append "%" (symbol->string (register-name loc))))
 	((register-indirect? loc)
 	 (if (not (zero? (offset loc)))
 	     (string-append (number->string (offset loc))
-			    "(%" (symbol->string (register loc)) ")")
-	     (string-append "(%" (symbol->string (register loc)) ")")))
+			    "(%" (symbol->string (register-name loc)) ")")
+	     (string-append "(%" (symbol->string (register-name loc)) ")")))
 	((address? loc) (base loc))
 	((address-with-offset? loc)
 	 (string-append (base loc) "+"

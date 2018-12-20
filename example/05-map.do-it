@@ -1,4 +1,4 @@
-;;; Demonstrate Higher Order Procedures with MAP
+;;; Demonstrate higher order procedures with MAP
 ;;; List stuff from 04-pair1.do-it
 
 (defvar word-size 4)
