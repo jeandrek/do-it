@@ -33,7 +33,8 @@
 	(lambda (def) (compile-definition def env))
 	definitions)
        (if (not (null? expressions))
-	   (compile-defproc (make-defproc 'main '() expressions) env))
+	   (compile-defproc (make-defproc 'main '() (append expressions '(0)))
+			    env))
        (if (not (null? *strings*))
 	   (compile-strings))))))
 
