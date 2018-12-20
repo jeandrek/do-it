@@ -93,12 +93,9 @@
 	(else (error "Unknown expression type" exp))))
 
 (define (compile-definition definition env)
-  (cond ((defproc? definition)
-	 (compile-defproc definition env))
-	((defvar? definition)
-	 (compile-defvar definition env))
-	((defmacro? definition)
-	 (compile-defmacro definition env))))
+  (if (defproc? definition)
+      (compile-defproc definition env)
+      (compile-defvar definition env)))
 
 (define (compile-defproc definition env)
   (let ((name (symbol->label (defproc-name definition)))
@@ -132,15 +129,6 @@
 	(let ((l (make-label 'variable)))
 	  (codegen-common l)
 	  (environment-define! env var (make-address l))))))
-
-(define (compile-defmacro definition env)
-  (let ((lambda-exp
-	 `(lambda (exp)
-	    (apply (lambda ,(defmacro-parameters definition)
-		     ,@(defmacro-body definition))
-		   (cdr exp)))))
-    (put (defmacro-name definition) 'compile
-	 (derived-form (eval lambda-exp (scheme-report-environment 5))))))
 
 (define (compile-datum obj)
   (cond ((integer? obj)
@@ -275,31 +263,10 @@
      (lambda (exp env)
        (error "Definition in expression context")))
 
-(put 'defmacro 'compile
-     (lambda (exp env)
-       (error "Definition in expression context")))
-
-;;;; Derived special forms
-
-(define (derived-form transformer)
-  (lambda (exp env)
-    (compile (transformer exp) env)))
-
-(define (expand-for exp)
-  (apply (lambda (init test step . body)
-	   `(begin
-	      ,init
-	      (while ,test
-		,@body
-		,step)))
-	 (cdr exp)))
-
-(put 'for 'compile (derived-form expand-for))
-
 ;;;; Syntax
 
 (define (definition? statement)
-  (or (defproc? statement) (defvar? statement) (defmacro? statement)))
+  (or (defproc? statement) (defvar? statement)))
 
 (define (defproc? statement)
   (tagged-list? statement 'defproc))
@@ -319,12 +286,6 @@
 (define (defvar-value def) (caddr def))
 (define (defvar-has-value? def)
   (not (null? (cddr def))))
-
-(define (defmacro? statement)
-  (tagged-list? statement 'defmacro))
-(define (defmacro-name def) (cadr def))
-(define (defmacro-parameters def) (caddr def))
-(define (defmacro-body def) (cdddr def))
 
 (define (self-evaluating? exp)
   (or (number? exp)
