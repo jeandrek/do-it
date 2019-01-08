@@ -14,12 +14,12 @@ No.
 * Variables only have dynamic extent (like C/C++).
 
 ## Operating system support
-|      Operating system     |           Status             |
-| ------------------------- | ---------------------------- |
-| GNU/Linux and OpenBSD     | Works fine out-of-the-box.   |
-| Microsoft Windows (MinGW) | Set `abi-underscore?` to `#t`. |
-| macOS                     | Set `abi-underscore?` to `#t`. |
-| Other operating systems   | Not yet tested.              |
+|      Operating system       |           Status               |
+| --------------------------- | ------------------------------ |
+| GNU/Linux, OpenBSD, Solaris | Works fine out-of-the-box.     |
+| macOS                       | Set `abi-underscore?` to `#t`. |
+| Microsoft Windows (MinGW)   | Set `abi-underscore?` to `#t`. |
+| Other operating systems     | Not yet tested.                |
 
 ## Usage
 Edit Makefile as necessary. Then run `make` to compile the library. Now you can
