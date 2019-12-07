@@ -1,11 +1,5 @@
 # do-it
-Do-it is a _messy_ toy procedural imperative (although everything is an expression for simplicity) programming language I'm writing to gain experience in code generation. It uses Scheme S-Expression syntax and the compiler is written in Scheme.
-
-## Why?
-Because I want to learn about code generation.
-
-### Should I use do-it to write programs/learn to program?
-No.
+Do-it is a _messy_ toy procedural imperative (although everything is an expression for simplicity) programming language I wrote to learn about code generation, initially derived from [_An Incremental Approach to Compiler Construction_](http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf) by Abdulaziz Ghuloum. It uses Scheme S-Expression syntax and the compiler is written in Scheme.
 
 ## Limitations
 * The compiler can only compile to 32-bit x86 Assembly. (Use the `-m32` option
